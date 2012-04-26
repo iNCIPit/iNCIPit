@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE NCIPMessage PUBLIC "-//NISO//NCIP DTD Version 1.0//EN"   "http://www.niso.org/ncip/v1_0/imp1/dtd/ncip_v1_0.dtd">
+<NCIPMessage   version="http://www.niso.org/ncip/v1_0/imp1/dtd/ncip_v1_0.dtd">
+ <LookupUser>
+         <InitiationHeader>
+                 <FromAgencyId>
+                         <UniqueAgencyId>
+                                 <Scheme datatype="string"></Scheme>
+                                 <Value datatype="string">FROM_AGENCY_HERE</Value>
+                         </UniqueAgencyId>
+                 </FromAgencyId>
+                <ToAgencyId>
+                         <UniqueAgencyId>
+                                <Scheme   datatype="string"></Scheme>
+                                <Value datatype="string">TO_AGENCY_HERE</Value>
+                        </UniqueAgencyId>
+                 </ToAgencyId>
+         </InitiationHeader>
+        <VisibleUserId>
+                 <VisibleUserIdentifierType>
+                         <Scheme datatype="string"></Scheme>
+                         <Value datatype="string">Barcode</Value>
+                </VisibleUserIdentifierType>
+                 <VisibleUserIdentifier datatype="string">BARCODE_HERE</VisibleUserIdentifier>
+         </VisibleUserId>
+	 <UserElementType>
+		 <Scheme datatype="string"></Scheme>
+ 		<Value datatype="string">Name Information</Value>
+	 </UserElementType>
+	 <UserElementType>
+		 <Scheme datatype="string"></Scheme>
+		 <Value datatype="string">User Address Information</Value>
+ 	</UserElementType>
+	 <UserElementType>
+		 <Scheme datatype="string"></Scheme>
+		 <Value datatype="string">Visible User Id</Value>
+	 </UserElementType>
+	 <UserElementType>
+		 <Scheme   datatype="string"></Scheme>
+		 <Value datatype="string">User Privilege</Value>
+	 </UserElementType>
+	 <UserElementType>
+		 <Scheme   datatype="string"></Scheme>
+		 <Value datatype="string">Block Or Trap</Value>
+	 </UserElementType>
+ </LookupUser>
+</NCIPMessage>

@@ -13,7 +13,7 @@
 # License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with issa. If not, see <http://www.gnu.org/licenses/>.
+# along with iNCIPit. If not, see <http://www.gnu.org/licenses/>.
 
 
 use warnings;

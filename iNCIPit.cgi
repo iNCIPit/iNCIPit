@@ -641,15 +641,44 @@ if (!defined($uidValue) || (ref($uidValue) && reftype($uidValue) eq 'HASH')) {
 	die;
 }
 
-my ($propername,$email,$good_until,$userprivid) = ("name here","","good until","0") ;
-            
+my ($propername,$email,$good_until,$userprivid,$block_stanza) = ("name here","","good until","0","") ; # Setting Defaults 
+
 my $patron = flesh_user($uidValue);
-            
-#if (blessed($patron)) {
-	if ($patron->deleted eq 't') {
-		do_lookup_user_error_stanza("PATRON_DELETED");
+
+        my $patron_ok = 1;
+        my @penalties = @{$patron->standing_penalties};
+
+        if ($patron->deleted eq 't') {
+                do_lookup_user_error_stanza("PATRON_DELETED");
+                die;
+        } elsif ($patron->barred eq 't') {
+                do_lookup_user_error_stanza("PATRON_BARRED");
+                die;
+        } elsif ($patron->active eq 'f') {
+                do_lookup_user_error_stanza("PATRON_INACTIVE");
                 die;
         }
+
+       elsif ($#penalties > -1) {
+                my $penalty;
+                       foreach $penalty (@penalties) {
+                    if (defined($penalty->standing_penalty->block_list)) {
+                            my @block_list = split(/\|/, $penalty->standing_penalty->block_list);
+                            foreach my $block (@block_list) {
+                                foreach my $block_on (@$block_types) {
+                                    if ($block eq $block_on) {
+                                        $block_stanza .= "\n".$penalty->standing_penalty->name;
+                                        $patron_ok = 0;
+                                    }
+                                    last unless ($patron_ok);
+                               }
+                                last unless ($patron_ok);
+                           }
+                     }
+                }
+       }
+
+            
 	$propername = $patron->first_given_name . " " . $patron->family_name;
 
         if ( defined($patron->email) ) {
@@ -725,6 +754,8 @@ Content-type: text/xml
 	</UserOptionalFields>
    </LookupUserResponse>
 </NCIPMessage>
+
+Block Stanza (for testing) => $block_stanza
 
 LOOKUPUSERRESPONSE
 

@@ -2,4 +2,4 @@ Inital version of ncip v.1 ncip responder for evergreen / open-ils
 
 you can initiate / test with the following :
 
-curl -v --insecure --data @NCIPmsgs/LookupUser.ncip -X POST 'https://target.host.here/ncip.cgi'
+curl -v --insecure --data @NCIPmsgs/LookupUser.ncip -X POST 'https://target.host.here/iNCIPit.cgi'

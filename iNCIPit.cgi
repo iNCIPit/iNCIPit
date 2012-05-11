@@ -1211,7 +1211,9 @@ sub renewal
 
 
     my $response = OpenSRF::AppSession->create('open-ils.circ')
-        ->request('open-ils.circ.renew', $session{authtoken},
+#        ->request('open-ils.circ.renew', $session{authtoken},
+# wanted the ncip ItemRenewed to be able to override std.limits on renewals so ...
+        ->request('open-ils.circ.renew.override', $session{authtoken},
                   { copy_barcode => $copy_barcode,
 		    due_date => $due_date })
         ->gather(1);

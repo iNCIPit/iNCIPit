@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE NCIPMessage PUBLIC "-//NISO//NCIP DTD Version 1.0//EN" "http://www.niso.org/ncip/v1_0/imp1/dtd/ncip_v1_0.dtd">
+<NCIPMessage version="http://www.niso.org/ncip/v1_0/imp1/dtd/ncip_v1_0.dtd">
+    <ItemCheckedOut>
+        <InitiationHeader>
+            <FromAgencyId>
+                <UniqueAgencyId>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">AGENCY_CODE</Value>
+                </UniqueAgencyId>
+            </FromAgencyId>
+            <ToAgencyId>
+                <UniqueAgencyId>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">AGENCY_CODE</Value>
+                </UniqueAgencyId>
+            </ToAgencyId>
+        </InitiationHeader>
+        <UniqueUserId>
+            <UniqueAgencyId>
+                <Scheme datatype="string">SCHEME_HERE</Scheme>
+                <Value datatype="string">AGENCY_CODE</Value>
+            </UniqueAgencyId>
+            <UserIdentifierValue datatype="string">USER_BARCODE</UserIdentifierValue>
+        </UniqueUserId>
+        <UniqueItemId>
+            <UniqueAgencyId>
+                <Scheme datatype="string">SCHEME_HERE</Scheme>
+                <Value datatype="string">AGENCY_CODE</Value>
+            </UniqueAgencyId>
+            <ItemIdentifierValue datatype="string">BARCODE</ItemIdentifierValue>
+        </UniqueItemId>
+        <DateDue datatype="dateTime">DATE_DUE_TIMESTAMP</DateDue>
+        <ItemOptionalFields>
+            <BibliographicDescription>
+                <Author datatype="string"> author not using yet </Author>
+                <Title datatype="string"> title not using in this context </Title>
+                <MediumType>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">MEDIUM_TYPE</Value>
+                </MediumType>
+            </BibliographicDescription>
+            <ItemDescription>
+                <VisibleItemId>
+                    <VisibleItemIdentifierType>
+                        <Scheme datatype="string">SCHEME_HERE</Scheme>
+                        <Value datatype="string">Barcode</Value>
+                    </VisibleItemIdentifierType>
+                    <VisibleItemIdentifier datatype="string">BARCODE</VisibleItemIdentifier>
+                </VisibleItemId>
+            </ItemDescription>
+        </ItemOptionalFields>
+        <UserOptionalFields>
+            <VisibleUserId>
+                <VisibleUserIdentifierType>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">Barcode</Value>
+                </VisibleUserIdentifierType>
+                <VisibleUserIdentifier datatype="string">USER_BARCODE</VisibleUserIdentifier>
+            </VisibleUserId>
+            <UserPrivilege>
+                <UniqueAgencyId>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">AGENCY_CODE</Value>
+                </UniqueAgencyId>
+                <AgencyUserPrivilegeType>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">PRIMARY_GROUP_NAME</Value>
+                </AgencyUserPrivilegeType>
+            </UserPrivilege>
+        </UserOptionalFields>
+    </ItemCheckedOut>
+</NCIPMessage>

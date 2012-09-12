@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE NCIPMessage PUBLIC "-//NISO//NCIP DTD Version 1.0//EN" "http://www.niso.org/ncip/v1_0/imp1/dtd/ncip_v1_0.dtd">
+<NCIPMessage version="http://www.niso.org/ncip/v1_0/imp1/dtd/ncip_v1_0.dtd">
+    <CheckOutItem>
+        <InitiationHeader>
+            <FromAgencyId>
+                <UniqueAgencyId>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">AGENCY_CODE</Value>
+                </UniqueAgencyId>
+            </FromAgencyId>
+            <ToAgencyId>
+                <UniqueAgencyId>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">AGENCY_CODE</Value>
+                </UniqueAgencyId>
+            </ToAgencyId>
+        </InitiationHeader>
+        <MandatedAction>
+            <DateEventOccurred datatype="dateTime">DATE_TIMESTAMP</DateEventOccurred>
+        </MandatedAction>
+        <UniqueUserId>
+            <UniqueAgencyId>
+                <Scheme datatype="string">SCHEME_HERE</Scheme>
+                <Value datatype="string">AGENCY_CODE</Value>
+            </UniqueAgencyId>
+            <UserIdentifierValue datatype="string">USER_BARCODE</UserIdentifierValue>
+        </UniqueUserId>
+        <UniqueItemId>
+            <UniqueAgencyId>
+                <Scheme datatype="string">SCHEME_HERE</Scheme>
+                <Value datatype="string">AGENCY_CODE</Value>
+            </UniqueAgencyId>
+            <ItemIdentifierValue datatype="string">BARCODE</ItemIdentifierValue>
+        </UniqueItemId>
+    </CheckOutItem>
+</NCIPMessage>
+

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE NCIPMessage PUBLIC "-//NISO//NCIP DTD Version 1.0//EN" "http://www.niso.org/ncip/v1_0/imp1/dtd/ncip_v1_0.dtd">
+<NCIPMessage version="http://www.niso.org/ncip/v1_0/imp1/dtd/ncip_v1_0.dtd">
+    <ItemCheckedIn>
+        <InitiationHeader>
+            <FromAgencyId>
+                <UniqueAgencyId>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">AGENCY_CODE</Value>
+                </UniqueAgencyId>
+            </FromAgencyId>
+            <ToAgencyId>
+                <UniqueAgencyId>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">AGENCY_CODE</Value>
+                </UniqueAgencyId>
+            </ToAgencyId>
+        </InitiationHeader>
+        <UniqueItemId>
+            <UniqueAgencyId>
+                <Scheme datatype="string">SCHEME_HERE</Scheme>
+                <Value datatype="string">AGENCY_CODE</Value>
+            </UniqueAgencyId>
+            <ItemIdentifierValue datatype="string">ITEM_BARCODE</ItemIdentifierValue>
+        </UniqueItemId>
+        <ItemOptionalFields>
+            <BibliographicDescription>
+                <Author datatype="string">OPT_AUTHOR</Author>
+                <Title datatype="string">OPT_TITLE</Title>
+                <MediumType>
+                    <Scheme datatype="string">SCHEME_HERE</Scheme>
+                    <Value datatype="string">MEDIUM_TYPE</Value>
+                </MediumType>
+            </BibliographicDescription>
+            <ItemDescription>
+                <VisibleItemId>
+                    <VisibleItemIdentifierType>
+                        <Scheme datatype="string">SCHEME_HERE</Scheme>
+                        <Value datatype="string">Barcode</Value>
+                    </VisibleItemIdentifierType>
+                    <VisibleItemIdentifier datatype="string">ITEM_BARCODE</VisibleItemIdentifier>
+                </VisibleItemId>
+            </ItemDescription>
+        </ItemOptionalFields>
+    </ItemCheckedIn>
+</NCIPMessage>

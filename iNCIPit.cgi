@@ -74,51 +74,20 @@ my %session = login();
 $SIG{'ALRM'} = \&logout;
 
 if ( defined( $session{authtoken} ) ) {
-	$doc->exists('/NCIPMessage/LookupUser') ? lookupUser()
-	  : (
-		$doc->exists('/NCIPMessage/ItemRequested') ? item_request()
-		: (
-			$doc->exists('/NCIPMessage/ItemShipped') ? item_shipped()
-			: (
-				$doc->exists('/NCIPMessage/ItemCheckedOut') ? item_checked_out()
-				: (
-					$doc->exists('/NCIPMessage/CheckOutItem') ? check_out_item()
-					: (
-						$doc->exists('/NCIPMessage/ItemCheckedIn')
-						? item_checked_in()
-						: (
-							$doc->exists('/NCIPMessage/CheckInItem')
-							? check_in_item()
-							: (
-								$doc->exists('/NCIPMessage/ItemReceived')
-								? item_received()
-								: (
-									$doc->exists('/NCIPMessage/AcceptItem')
-									? accept_item()
-									: (
-										$doc->exists(
-											'/NCIPMessage/ItemRequestCancelled')
-										? item_cancelled()
-										: (
-											$doc->exists(
-												'/NCIPMessage/ItemRenewed')
-											? item_renew()
-											: (
-												$doc->exists(
-													'/NCIPMessage/RenewItem')
-												? renew_item()
-												: fail("UNKNOWN NCIPMessage")
-											)
-										)
-									)
-								)
-							)
-						)
-					)
-				)
-			)
-		)
-	  );
+	$doc->exists('/NCIPMessage/LookupUser')           ? lookupUser()       : (
+	$doc->exists('/NCIPMessage/ItemRequested')        ? item_request()     : (
+	$doc->exists('/NCIPMessage/ItemShipped')          ? item_shipped()     : (
+	$doc->exists('/NCIPMessage/ItemCheckedOut')       ? item_checked_out() : (
+	$doc->exists('/NCIPMessage/CheckOutItem')         ? check_out_item()   : (
+	$doc->exists('/NCIPMessage/ItemCheckedIn')        ? item_checked_in()  : (
+	$doc->exists('/NCIPMessage/CheckInItem')          ? check_in_item()    : (
+	$doc->exists('/NCIPMessage/ItemReceived')         ? item_received()    : (
+	$doc->exists('/NCIPMessage/AcceptItem')           ? accept_item()      : (
+	$doc->exists('/NCIPMessage/ItemRequestCancelled') ? item_cancelled()   : (
+	$doc->exists('/NCIPMessage/ItemRenewed')          ? item_renew()       : (
+	$doc->exists('/NCIPMessage/RenewItem')            ? renew_item()       :
+	fail("UNKNOWN NCIPMessage")
+	)))))))))));
 
 	# Clear any SIGALRM timers.
 	alarm(0);

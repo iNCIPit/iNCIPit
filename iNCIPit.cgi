@@ -38,11 +38,13 @@ my $xmlpost = CGI::XMLPost->new();
 my $xml = $xmlpost->data(); 
 
 # log posted data 
+# XXX: posted ncip message log filename should be in config. 
 open POST_DATA, ">>post_data.txt";
 print POST_DATA $xml;
 close POST_DATA;
 
 # read in last xml request
+# XXX: just the most recently posted ncip message filename should be in config. 
 {
   local $/ = undef;
   open FILE, "last_post.txt" or die "Couldn't open file: $!";
@@ -57,6 +59,7 @@ if ( $xml eq $prev_xml ) {
 }
 
 # save just the last post in order to test diff on the next request 
+# XXX: just the most recently posted ncip message filename should be in config. 
 open LAST_POST_DATA, ">last_post.txt";
 print LAST_POST_DATA $xml;
 close LAST_POST_DATA;
@@ -945,7 +948,8 @@ die;
 # Returns a hash with the authtoken, authtime, and expiration (time in
 # seconds since 1/1/1970).
 sub login {
-
+# XXX: local opensrf core conf filename should be in config. 
+# XXX: STAFF account with ncip service related permissions should be in config. 
 my $bootstrap = '/openils/conf/opensrf_core.xml';
 my $uname = "STAFF_EQUIVALENT_USERNAME_HERE"; 
 my $password = "STAFF_EQUIVALENT_PASSWORD";
@@ -1392,6 +1396,8 @@ sub user_id_from_barcode {
 # "HOLD_TYPE_NOT_SUPPORTED" if the hold type is not supported
 # (Currently only support 'T' and 'C')
 
+# simple hold should be removed and full holds sub should be used instead - pragmatic solution only 
+
 sub place_simple_hold {
     check_session_time();
     #my ($type, $target, $patron, $pickup_ou) = @_;
@@ -1399,6 +1405,8 @@ sub place_simple_hold {
 	# NOTE : switch "t" to an "f" to make inactive hold active
 require '/home/opensrf/Evergreen-ILS-2.1.1/Open-ILS/src/support-scripts/oils_header.pl';
 use vars qw/ $apputils $memcache $user $authtoken $authtime /;
+# XXX: local opensrf core conf filename should be in config. 
+# XXX: STAFF account with ncip service related permissions should be in config. 
 	osrf_connect("/openils/conf/opensrf_core.xml");
         oils_login("STAFF_EQUIVALENT_USERNAME", "STAFF_EQUIVALENT_PASSWORD");
 	my $full_hold = '{"__c":"ahr","__p":[null,null,null,null,1,null,null,null,null,"C",null,null,"","3",null,"3",null,"'.$patron.'",1,"3","'.$target.'","'.$patron.'",null,null,null,null,null,null,"f",null]}';

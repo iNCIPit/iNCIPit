@@ -33,6 +33,7 @@ use MARC::Field;
 use MARC::File::XML;
 use POSIX qw/strftime/;
 use DateTime;
+my $U = "OpenILS::Application::AppUtils";
 
 my $xmlpost = CGI::XMLPost->new();
 my $xml     = $xmlpost->data();
@@ -685,22 +686,20 @@ sub item_request {
 
     my $r = "default error checking response";
 
-    if ( $barcode =~ /^i/ ) {    # create copy only if barcode is an iNUMBER
-        my $copy_status_id = 110;    # INN-Reach Loan Requested
+    if ( $barcode =~ /^i/ ) {    # XXX EG is User Agency # create copy only if barcode is an iNUMBER
+        my $copy_status_id = 110;    # XXX CUSTOMIZATION NEEDED XXX # INN-Reach Loan Requested - local configured status
         $barcode .= $faidValue;
-        $r = create_copy( $title, $callnumber, $barcode, $copy_status_id,
-            $medium_type );
-        my $pid     = user_id_from_barcode($id);
-        my $localid = locid_from_barcode($barcode);
-        my $r2      = place_simple_hold( $localid, $pid );
-    } else {
-
-        # place hold for patron_id 1013459 = zyyyy demo user
-        my $localid = locid_from_barcode($barcode);
-        my $pid     = "1013459";
-        $r = place_simple_hold( $localid, $pid );
+        # we want our custom status to be then end result, so create the copy with status of "Available, then hold it, then update the status
+        $r = create_copy( $title, $callnumber, $barcode, 0, $medium_type );
         my $copy = copy_from_barcode($barcode);
-        my $r2 = update_copy( $copy, 111 );    # put into INN-Reach Hold status
+        my $r2   = place_simple_hold( $copy->id, $pid );
+        my $r3   = update_copy( $copy, $copy_status_id );
+    } else {    # XXX EG is Item Agency
+        # place hold for user UniqueUserId/UniqueAgencyId/Value = institution account
+        my $copy = copy_from_barcode($barcode);
+        my $pid2 = 1013459; # XXX CUSTOMIZATION NEEDED XXX # this is the id of a user representing your DCB system, TODO: use agency information to create and link to individual accounts per agency, if needed
+        $r = place_simple_hold( $copy->id, $pid2 );
+        my $r2 = update_copy( $copy, 111 ); # XXX CUSTOMIZATION NEEDED XXX # put into INN-Reach Hold status
     }
 
     my $hd = <<ITEMREQ;

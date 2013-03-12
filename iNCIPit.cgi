@@ -241,12 +241,13 @@ sub accept_item {
     my $taidSchemeX = $doc->findvalue('/NCIPMessage/AcceptItem/InitiationHeader/ToAgencyId/UniqueAgencyId/Scheme');
     my $taidScheme = HTML::Entities::encode($taidSchemeX);
     my $taidValue  = $doc->find('/NCIPMessage/AcceptItem/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
-
     my $visid = $doc->findvalue('/NCIPMessage/AcceptItem/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
     my $request_id = $doc->findvalue('/NCIPMessage/AcceptItem/UniqueRequestId/RequestIdentifierValue') || "unknown";
     my $patron = $doc->findvalue('/NCIPMessage/AcceptItem/UserOptionalFields/VisibleUserId/VisibleUserIdentifier');
     my $copy = copy_from_barcode($visid);
-    my $r2 = update_copy( $copy, 111 );    # put into INN-Reach Hold status
+    my $r2 = update_copy( $copy, 111 ); # XXX CUSTOMIZATION NEEDED XXX # put into INN-Reach Hold status
+
+# TODO: this should probably fulfill the original hold, not just change the status.  Eventually we should split the hold type, as holds arriving are not the same as holds needing to be sent
 
     my $hd = <<ACCEPTITEM;
 Content-type: text/xml
@@ -282,22 +283,15 @@ ACCEPTITEM
 
     logit( $hd, ( caller(0) )[3] );
     staff_log( $taidValue, $faidValue,
-            "AcceptItem -> Request Id : "
-          . $request_id
-          . " | Patron Id : "
-          . $patron
-          . " | Visible Id :"
-          . $visid );
+        "AcceptItem -> Request Id : " . $request_id . " | Patron Id : " . $patron . " | Visible Id :" . $visid );
 }
 
 sub item_received {
     my $faidValue = $doc->find('/NCIPMessage/ItemReceived/InitiationHeader/FromAgencyId/UniqueAgencyId/Value');
-    my $barcode = $doc->findvalue('/NCIPMessage/ItemReceived/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
-    my $copy = copy_from_barcode($barcode);
-    fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-    my $r1 = checkin($barcode)
-      if ( $copy->status == OILS_COPY_STATUS_CHECKED_OUT )
-      ;    # checkin the item before delete if ItemCheckedIn step was skipped
+    my $visid = $doc->findvalue('/NCIPMessage/ItemReceived/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
+    my $copy = copy_from_barcode($visid);
+    fail( $copy->{textcode} . " $visid" ) unless ( blessed $copy);
+    my $r1 = checkin($visid) if ( $copy->status == OILS_COPY_STATUS_CHECKED_OUT ); # checkin the item before delete if ItemCheckedIn step was skipped
     my $r2 = delete_copy($copy);
 
     my $hd = <<ITEMRECEIVED;
@@ -322,7 +316,7 @@ Content-type: text/xml
             </ToAgencyId>
         </ResponseHeader>
         <UniqueItemId>
-            <ItemIdentifierValue datatype="string">$barcode</ItemIdentifierValue>
+            <ItemIdentifierValue datatype="string">$visid</ItemIdentifierValue>
         </UniqueItemId>
     </ItemReceivedResponse>
 </NCIPMessage> 
@@ -330,8 +324,7 @@ Content-type: text/xml
 ITEMRECEIVED
 
     logit( $hd, ( caller(0) )[3] );
-    staff_log( $taidValue, $faidValue,
-        "ItemReceived -> Barcode : " . $barcode );
+    staff_log( $taidValue, $faidValue, "ItemReceived -> Visible ID : " . $visid );
 }
 
 sub item_cancelled {
@@ -356,8 +349,7 @@ sub item_cancelled {
         # remove hold!
         my $copy = copy_from_barcode($barcode);
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-        my $r = update_copy( $copy, 0 )
-          ;    # available vs. remove hold? need to test further ...
+        my $r = update_copy( $copy, 0 ); # TODO: we need to actually remove the hold, not just reset to available
     }
 
     my $hd = <<ITEMREQUESTCANCELLED;
@@ -402,11 +394,11 @@ sub item_checked_in {
     my $taidScheme = HTML::Entities::encode($taidSchemeX);
     my $taidValue  = $doc->find('/NCIPMessage/ItemCheckedIn/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
 
-    my $barcode = $doc->findvalue('/NCIPMessage/ItemCheckedIn/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
-    my $r    = checkin($barcode);
-    my $copy = copy_from_barcode($barcode);
-    fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-    my $r2 = update_copy( $copy, 113 );    # "INN-Reach Transit Return" status
+    my $visid = $doc->findvalue('/NCIPMessage/ItemCheckedIn/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
+    my $r = checkin($visid);
+    my $copy = copy_from_barcode($visid);
+    fail( $copy->{textcode} . " $visid" ) unless ( blessed $copy);
+    my $r2 = update_copy( $copy, 113 ); # XXX CUSTOMIZATION NEEDED XXX # "INN-Reach Transit Return" status
 
     my $hd = <<ITEMCHECKEDIN;
 Content-type: text/xml
@@ -430,7 +422,7 @@ Content-type: text/xml
             </ToAgencyId>
         </ResponseHeader>
         <UniqueItemId>
-            <ItemIdentifierValue datatype="string">$barcode</ItemIdentifierValue>
+            <ItemIdentifierValue datatype="string">$visid</ItemIdentifierValue>
         </UniqueItemId>
     </ItemCheckedInResponse>
 </NCIPMessage> 
@@ -438,8 +430,7 @@ Content-type: text/xml
 ITEMCHECKEDIN
 
     logit( $hd, ( caller(0) )[3] );
-    staff_log( $taidValue, $faidValue,
-        "ItemCheckedIn -> Barcode : " . $barcode );
+    staff_log( $taidValue, $faidValue, "ItemCheckedIn -> Visible ID : " . $visid );
 }
 
 sub item_checked_out {
@@ -450,18 +441,15 @@ sub item_checked_out {
     my $taidScheme = HTML::Entities::encode($taidSchemeX);
     my $taidValue  = $doc->find('/NCIPMessage/ItemCheckedOut/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
 
-    my $pid = $doc->findvalue('/NCIPMessage/ItemCheckedOut/UserOptionalFields/VisibleUserId/VisibleUserIdentifier');
+    my $patron_barcode = $doc->findvalue('/NCIPMessage/ItemCheckedOut/UserOptionalFields/VisibleUserId/VisibleUserIdentifier');
     my $due_date = $doc->findvalue('/NCIPMessage/ItemCheckedOut/DateDue');
-    my $visid    = $doc->findvalue('/NCIPMessage/ItemCheckedOut/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
+    my $visid = $doc->findvalue('/NCIPMessage/ItemCheckedOut/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
 
     my $copy = copy_from_barcode($visid);
     fail( $copy->{textcode} . " $visid" ) unless ( blessed $copy);
-    my $r = update_copy( $copy, 0 )
-      ; # seemed like copy had to be available before it could be checked out, so ...
-    my $r1 = checkin($visid)
-      if ( $copy->status == OILS_COPY_STATUS_CHECKED_OUT )
-      ; # double posted itemcheckedout messages cause error ... trying to simplify
-    my $r2 = checkout( $visid, $pid, $due_date );
+    my $r = update_copy( $copy, 0 ); # seemed like copy had to be available before it could be checked out, so ...
+    my $r1 = checkin($visid) if ( $copy->status == OILS_COPY_STATUS_CHECKED_OUT ); # double posted itemcheckedout messages cause error ... trying to simplify
+    my $r2 = checkout( $visid, $patron_barcode, $due_date );
 
     my $hd = <<ITEMCHECKEDOUT;
 Content-type: text/xml
@@ -494,12 +482,7 @@ ITEMCHECKEDOUT
 
     logit( $hd, ( caller(0) )[3] );
     staff_log( $taidValue, $faidValue,
-            "ItemCheckedOut -> Visible Id : "
-          . $visid
-          . " | Patron Id : "
-          . $pid
-          . " | Due Date : "
-          . $due_date );
+        "ItemCheckedOut -> Visible Id : " . $visid . " | Patron Barcode : " . $patron_barcode . " | Due Date : " . $due_date );
 }
 
 sub check_out_item {
@@ -511,16 +494,19 @@ sub check_out_item {
     my $taidValue  = $doc->find('/NCIPMessage/CheckOutItem/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
 
     my $mdate = $doc->findvalue('/NCIPMessage/CheckOutItem/MandatedAction/DateEventOccurred');
-    my $id = $doc->findvalue('/NCIPMessage/LookupUser/VisibleUserId/VisibleUserIdentifier');
-    my $pid = qq(zyyyy);
+    my $patron_barcode = "zyyyy";    # XXX: CUSTOMIZATION NEEDED XXX institution/eg_as_item_agency user lookup here
 
     my $barcode = $doc->findvalue('/NCIPMessage/CheckOutItem/UniqueItemId/ItemIdentifierValue');
+
+    # TODO: watch for possible real ids here?
     my $due_date = $doc->findvalue('/NCIPMessage/CheckOutItem/DateDue');
 
     my $copy = copy_from_barcode($barcode);
     fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
 
-    my $r2 = checkout( $barcode, $pid, $due_date );
+    my $r2 = checkout( $barcode, $patron_barcode, $due_date );
+
+    # TODO: check for checkout exception (like OPEN_CIRCULATION_EXISTS)
 
     my $hd = <<CHECKOUTITEM;
 Content-type: text/xml
@@ -553,12 +539,7 @@ CHECKOUTITEM
 
     logit( $hd, ( caller(0) )[3] );
     staff_log( $taidValue, $faidValue,
-            "CheckOutItem -> Barcode : "
-          . $barcode
-          . " | Patron Id : "
-          . $pid
-          . " | Due Date : "
-          . $due_date );
+        "CheckOutItem -> Barcode : " . $barcode . " | Patron Barcode : " . $patron_barcode . " | Due Date : " . $due_date );
 }
 
 sub check_in_item {
@@ -625,8 +606,7 @@ sub item_shipped {
 
     my $copy = copy_from_barcode($barcode);
     fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-    my $r = update_copy_shipped( $copy, 112, $visid )
-      ; # put copy into INN-Reach Transit status & modify barcode = Visid != tempIIIiNumber
+    my $r = update_copy_shipped( $copy, 112, $visid );    # XXX CUSTOMIZATION NEEDED XXX # put copy into INN-Reach Transit status & modify barcode = Visid != tempIIIiNumber
 
     my $hd = <<ITEMSHIPPED;
 Content-type: text/xml
@@ -659,14 +639,7 @@ ITEMSHIPPED
 
     logit( $hd, ( caller(0) )[3] );
     staff_log( $taidValue, $faidValue,
-            "ItemShipped -> Visible Id : "
-          . $visid
-          . " | Barcode : "
-          . $barcode
-          . " | Title : "
-          . $title
-          . " | Call Number : "
-          . $callnumber );
+        "ItemShipped -> Visible Id : " . $visid . " | Barcode : " . $barcode . " | Title : " . $title . " | Call Number : " . $callnumber );
 }
 
 sub item_request {
@@ -679,7 +652,9 @@ sub item_request {
     my $taidValue  = $doc->find('/NCIPMessage/ItemRequested/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
     my $UniqueItemIdAgencyIdValue = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueItemId/UniqueAgencyId/Value');
 
-    my $id = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueUserId/UserIdentifierValue');
+    # TODO: should we use the VisibleID for item agency variation of this method call
+
+    my $pid = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueUserId/UserIdentifierValue');
     my $barcode = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueItemId/ItemIdentifierValue');
     my $author = $doc->findvalue('/NCIPMessage/ItemRequested/ItemOptionalFields/BibliographicDescription/Author');
     my $title = $doc->findvalue('/NCIPMessage/ItemRequested/ItemOptionalFields/BibliographicDescription/Title');
@@ -730,7 +705,7 @@ Content-type: text/xml
                 <Scheme datatype="string">$taidScheme</Scheme>
                 <Value datatype="string">$taidValue</Value>
             </UniqueAgencyId>
-            <UserIdentifierValue datatype="string">$id</UserIdentifierValue>
+            <UserIdentifierValue datatype="string">$pid</UserIdentifierValue>
         </UniqueUserId>
         <UniqueItemId>
             <ItemIdentifierValue datatype="string">$barcode</ItemIdentifierValue>
@@ -751,14 +726,7 @@ ITEMREQ
 
     logit( $hd, ( caller(0) )[3] );
     staff_log( $taidValue, $faidValue,
-            "ItemRequested -> Barcode : "
-          . $barcode
-          . " | Title : "
-          . $title
-          . " | Call Number : "
-          . $callnumber
-          . " | ID :"
-          . $id );
+        "ItemRequested -> Barcode : " . $barcode . " | Title : " . $title . " | Call Number : " . $callnumber . " | Patronid :" . $pid );
 }
 
 sub lookupUser {
@@ -856,6 +824,8 @@ sub lookupUser {
     #    do_lookup_user_error_stanza("PATRON_NOT_FOUND : $id");
     #    die;
     #}
+    my $uniqid = $patron->id;
+    my $visid  = $patron->card->barcode;
     my $hd = <<LOOKUPUSERRESPONSE;
 Content-type: text/xml
 
@@ -882,7 +852,7 @@ Content-type: text/xml
                 <Scheme>$taidScheme</Scheme>
                 <Value>$taidValue</Value>
             </UniqueAgencyId>
-            <UserIdentifierValue>$id</UserIdentifierValue>
+            <UserIdentifierValue>$uniqid</UserIdentifierValue>
         </UniqueUserId>
         <UserOptionalFields>
             <VisibleUserId>
@@ -890,7 +860,7 @@ Content-type: text/xml
                     <Scheme datatype="string">http://blah.com</Scheme>
                     <Value datatype="string">Barcode</Value>
                 </VisibleUserIdentifierType>
-                <VisibleUserIdentifier datatype="string">$id</VisibleUserIdentifier>
+                <VisibleUserIdentifier datatype="string">$visid</VisibleUserIdentifier>
             </VisibleUserId>
             <NameInformation>
                 <PersonalNameInformation>
@@ -904,7 +874,7 @@ Content-type: text/xml
                 </UniqueAgencyId>
                 <AgencyUserPrivilegeType>
                     <Scheme datatype="string">http://testing.purposes.only</Scheme>
-                    <Value datatype="string">$userpriv</Value>
+                    <Value datatype="string">$userprivid</Value>
                 </AgencyUserPrivilegeType>
                 <ValidToDate datatype="string">$good_until</ValidToDate>
             </UserPrivilege> $email $block_stanza
@@ -1150,6 +1120,7 @@ sub delete_copy {
     return $e->event->{textcode} unless ($bre);
 
     # Delete everything in a transaction and rollback if anything fails.
+    # TODO: I think there is a utility function which handles all this
     $e->xact_begin;
     my $r;    # To hold results of editor calls
     $r = $e->delete_asset_copy($copy);
@@ -1167,11 +1138,9 @@ sub delete_copy {
             $e->rollback;
             return $lval;
         }
-        $list = $e->search_asset_call_number(
-            { record => $bre->id, deleted => 'f' } );
+        $list = $e->search_asset_call_number( { record => $bre->id, deleted => 'f' } );
         unless (@$list) {
-            $bre->deleted('t');
-            $r = $e->update_biblio_record_entry($bre);
+            $r = $e->delete_biblio_record_entry($bre);
             unless ($r) {
                 my $lval = $e->event->{textcode};
                 $e->rollback;
@@ -1226,7 +1195,7 @@ sub convert2marcxml {
     $xml =~ s/^<\?xml.+\?\s*>//go;
     $xml =~ s/>\s+</></go;
     $xml =~ s/\p{Cc}//go;
-    $xml = OpenILS::Application::AppUtils->entityize($xml);
+    $xml = $U->entityize($xml);
     $xml =~ s/[\x00-\x1f]//go;
     return $xml;
 }
@@ -1256,7 +1225,6 @@ sub create_copy {
     # Check if the barcode exists in asset.copy and bail if it does.
     my $list = $e->search_asset_copy( { deleted => 'f', barcode => $barcode } );
     if (@$list) {
-
 # in the future, can we update it, if it exists and only if it is an INN-Reach status item ?
         $e->finish;
         fail( 'BARCODE_EXISTS ! Barcode : ' . $barcode );
@@ -1286,8 +1254,8 @@ sub create_copy {
     # Create volume record
     my $vol =
       OpenSRF::AppSession->create('open-ils.cat')
-      ->request( 'open-ils.cat.call_number.find_or_create',
-        $session{authtoken}, $callnumber, $bre->id, 3 )->gather(1);
+      ->request( 'open-ils.cat.call_number.find_or_create', $session{authtoken}, $callnumber, $bre->id, 2 )   # XXX CUSTOMIZATION NEEDED XXX
+      ->gather(1);
     return $vol->{textcode} if ( $vol->{textcode} );
 
     # Retrieve the user
@@ -1295,17 +1263,24 @@ sub create_copy {
 
     # Create copy record
     my $copy = Fieldmapper::asset::copy->new();
-    $copy->circ_modifier(qq($medium_type));
+    # XXX CUSTOMIZATION NEEDED XXX
+    # You will need to either create a circ mod for every expected medium type,
+    # OR you should create a single circ mod for all requests from the external
+    # system.
+    # Adjust these lines as needed.
+    #    $copy->circ_modifier(qq($medium_type)); # XXX CUSTOMIZATION NEEDED XXX
+    # OR
+    $copy->circ_modifier('DCB'); # XXX CUSTOMIZATION NEEDED XXX
     $copy->barcode($barcode);
     $copy->call_number( $vol->{acn_id} );
-    $copy->circ_lib(3);    # just testing with one circ_lib for now
+    $copy->circ_lib(2); # XXX CUSTOMIZATION NEEDED XXX
     $copy->circulate('t');
     $copy->holdable('t');
     $copy->opac_visible('t');
     $copy->deleted('f');
     $copy->fine_level(2);
     $copy->loan_duration(2);
-    $copy->location(1);
+    $copy->location(156); # XXX CUSTOMIZATION NEEDED XXX
     $copy->status($copy_status_id);
     $copy->editor('1');
     $copy->creator('1');
@@ -1318,9 +1293,7 @@ sub create_copy {
     #    my $stat_cat_id = $node->getAttribute('stat_cat');
     #    my $value = $node->string_value();
     #    # Need to search for an existing asset.stat_cat_entry
-    my $asce = $e->search_asset_stat_cat_entry(
-        { 'stat_cat' => $stat_cat_id, 'value' => $value } )->[0];
-
+    #        my $asce = $e->search_asset_stat_cat_entry({'stat_cat' => $stat_cat_id, 'value' => $value})->[0];
     #    unless ($asce) {
     #        # if not, create a new one and use its id.
     #        $asce = Fieldmapper::asset::stat_cat_entry->new();
@@ -1414,8 +1387,7 @@ sub renewal {
 # Returns
 # "SUCCESS" on success
 # textcode of a failed OSRF request
-# 'COPY_NOT_CHECKED_OUT' when the copy is not checked out or not
-# checked out to the user's work_ou
+# 'COPY_NOT_CHECKED_OUT' when the copy is not checked out
 
 sub checkin {
     check_session_time();

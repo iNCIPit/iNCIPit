@@ -1527,87 +1527,88 @@ sub place_simple_hold {
 # textcode of a failed OSRF request
 # "HOLD_TYPE_NOT_SUPPORTED" if the hold type is not supported
 # (Currently only support 'T' and 'C')
-sub place_hold {
-    check_session_time();
-    my ( $type, $target, $patron, $pickup_ou ) = @_;
-
-    my $ou  = org_unit_from_shortname($work_ou);        # $work_ou is global
-    my $ahr = Fieldmapper::action::hold_request->new;
-    $ahr->hold_type($type);
-    if ( $type eq 'C' ) {
-
-        # Check if we own the copy.
-        if ( $ou->id == $target->circ_lib ) {
-
-            # We own it, so let's place a copy hold.
-            $ahr->target( $target->id );
-            $ahr->current_copy( $target->id );
-        } else {
-
-            # We don't own it, so let's place a title hold instead.
-            my $bib = bre_from_barcode( $target->barcode );
-            $ahr->target( $bib->id );
-            $ahr->hold_type('T');
-        }
-    } elsif ( $type eq 'T' ) {
-        $ahr->target($target);
-    } else {
-        return "HOLD_TYPE_NOT_SUPPORTED";
-    }
-    $ahr->usr( user_id_from_barcode($id) );
-
-    #$ahr->pickup_lib($pickup_ou->id);
-    $ahr->pickup_lib('3');
-    if ( !$patron->email ) {
-        $ahr->email_notify('f');
-        $ahr->phone_notify( $patron->day_phone ) if ( $patron->day_phone );
-    } else {
-        $ahr->email_notify('t');
-    }
-
-    # We must have a title hold and we want to change the hold
-    # expiration date if we're sending the copy to the VC.
-    set_title_hold_expiration($ahr) if ( $ahr->pickup_lib == $ou->id );
-
-    my $params = {
-        pickup_lib => $ahr->pickup_lib,
-        patronid   => $ahr->usr,
-        hold_type  => $ahr->hold_type
-    };
-
-    if ( $ahr->hold_type eq 'C' ) {
-        $params->{copy_id} = $ahr->target;
-    } else {
-        $params->{titleid} = $ahr->target;
-    }
-
-    my $r =
-      OpenSRF::AppSession->create('open-ils.circ')
-      ->request( 'open-ils.circ.title_hold.is_possible',
-        $session{authtoken}, $params )->gather(1);
-
-    if ( $r->{textcode} ) {
-        return $r->{textcode};
-    } elsif ( $r->{success} ) {
-        $r =
-          OpenSRF::AppSession->create('open-ils.circ')
-          ->request( 'open-ils.circ.holds.create.override',
-            $session{authtoken}, $ahr )->gather(1);
-
-        my $returnValue = "SUCCESS";
-        if ( ref($r) eq 'HASH' ) {
-            $returnValue =
-              ( $r->{textcode} eq 'PERM_FAILURE' )
-              ? $r->{ilsperm}
-              : $r->{textcode};
-            $returnValue =~ s/\.override$//
-              if ( $r->{textcode} eq 'PERM_FAILURE' );
-        }
-        return $returnValue;
-    } else {
-        return 'HOLD_NOT_POSSIBLE';
-    }
-}
+# XXX NOT USED OR WORKING, COMMENTING OUT FOR NOW
+#sub place_hold {
+#    check_session_time();
+#    my ( $type, $target, $patron, $pickup_ou ) = @_;
+#
+#    my $ou  = org_unit_from_shortname($work_ou);        # $work_ou is global
+#    my $ahr = Fieldmapper::action::hold_request->new;
+#    $ahr->hold_type($type);
+#    if ( $type eq 'C' ) {
+#
+#        # Check if we own the copy.
+#        if ( $ou->id == $target->circ_lib ) {
+#
+#            # We own it, so let's place a copy hold.
+#            $ahr->target( $target->id );
+#            $ahr->current_copy( $target->id );
+#        } else {
+#
+#            # We don't own it, so let's place a title hold instead.
+#            my $bib = bre_from_barcode( $target->barcode );
+#            $ahr->target( $bib->id );
+#            $ahr->hold_type('T');
+#        }
+#    } elsif ( $type eq 'T' ) {
+#        $ahr->target($target);
+#    } else {
+#        return "HOLD_TYPE_NOT_SUPPORTED";
+#    }
+#    $ahr->usr( user_id_from_barcode($id) );
+#
+#    #$ahr->pickup_lib($pickup_ou->id);
+#    $ahr->pickup_lib('3');
+#    if ( !$patron->email ) {
+#        $ahr->email_notify('f');
+#        $ahr->phone_notify( $patron->day_phone ) if ( $patron->day_phone );
+#    } else {
+#        $ahr->email_notify('t');
+#    }
+#
+#    # We must have a title hold and we want to change the hold
+#    # expiration date if we're sending the copy to the VC.
+#    set_title_hold_expiration($ahr) if ( $ahr->pickup_lib == $ou->id );
+#
+#    my $params = {
+#        pickup_lib => $ahr->pickup_lib,
+#        patronid   => $ahr->usr,
+#        hold_type  => $ahr->hold_type
+#    };
+#
+#    if ( $ahr->hold_type eq 'C' ) {
+#        $params->{copy_id} = $ahr->target;
+#    } else {
+#        $params->{titleid} = $ahr->target;
+#    }
+#
+#    my $r =
+#      OpenSRF::AppSession->create('open-ils.circ')
+#      ->request( 'open-ils.circ.title_hold.is_possible',
+#        $session{authtoken}, $params )->gather(1);
+#
+#    if ( $r->{textcode} ) {
+#        return $r->{textcode};
+#    } elsif ( $r->{success} ) {
+#        $r =
+#          OpenSRF::AppSession->create('open-ils.circ')
+#          ->request( 'open-ils.circ.holds.create.override',
+#            $session{authtoken}, $ahr )->gather(1);
+#
+#        my $returnValue = "SUCCESS";
+#        if ( ref($r) eq 'HASH' ) {
+#            $returnValue =
+#              ( $r->{textcode} eq 'PERM_FAILURE' )
+#              ? $r->{ilsperm}
+#              : $r->{textcode};
+#            $returnValue =~ s/\.override$//
+#              if ( $r->{textcode} eq 'PERM_FAILURE' );
+#        }
+#        return $returnValue;
+#    } else {
+#        return 'HOLD_NOT_POSSIBLE';
+#    }
+#}
 
 # Set the expiration date on title holds
 #
@@ -1616,14 +1617,15 @@ sub place_hold {
 #
 # Returns
 # Nothing
-sub set_title_hold_expiration {
-    my $hold = shift;
-    if ( $title_holds->{unit} && $title_holds->{duration} ) {
-        my $expiration = DateTime->now( time_zone => $tz );
-        $expiration->add( $title_holds->{unit} => $title_holds->{duration} );
-        $hold->expire_time( $expiration->iso8601() );
-    }
-}
+# XXX NOT USED OR WORKING, COMMENTING OUT FOR NOW
+#sub set_title_hold_expiration {
+#    my $hold = shift;
+#    if ( $title_holds->{unit} && $title_holds->{duration} ) {
+#        my $expiration = DateTime->now( time_zone => $tz );
+#        $expiration->add( $title_holds->{unit} => $title_holds->{duration} );
+#        $hold->expire_time( $expiration->iso8601() );
+#    }
+#}
 
 # Get actor.org_unit from the shortname
 #

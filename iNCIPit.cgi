@@ -570,10 +570,12 @@ sub check_in_item {
     my $taidValue  = $doc->find('/NCIPMessage/CheckInItem/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
 
     my $barcode = $doc->findvalue('/NCIPMessage/CheckInItem/UniqueItemId/ItemIdentifierValue');
-    my $r    = checkin($barcode);
-    my $copy = copy_from_barcode($barcode);
-    fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-    my $r2 = update_copy( $copy, 0 );    # Available now
+    my $r = checkin($barcode);
+    fail($r) if $r =~ /^COPY_NOT_CHECKED_OUT/;
+    # TODO: do we need to do these next steps?  checkin() should handle everything, and we want this to end up in 'reshelving'.  If we are worried about transits, we should handle (abort) them, not just change the status
+    ##my $copy = copy_from_barcode($barcode);
+    ##fail($copy->{textcode}." $barcode") unless (blessed $copy);
+    ## 	my $r2 = update_copy($copy,0); # Available now 
 
     my $hd = <<CHECKINITEM;
 Content-type: text/xml

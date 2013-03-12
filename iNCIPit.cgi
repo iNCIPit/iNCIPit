@@ -1483,26 +1483,33 @@ sub place_simple_hold {
     check_session_time();
 
     #my ($type, $target, $patron, $pickup_ou) = @_;
-    my ( $target, $patron ) = @_;
+    my ( $target, $patron_id ) = @_;
 
     # NOTE : switch "t" to an "f" to make inactive hold active
-    require '/home/opensrf/Evergreen-ILS-2.1.1/Open-ILS/src/support-scripts/oils_header.pl';
+    require '/openils/bin/oils_header.pl';    # XXX CUSTOMIZATION NEEDED XXX
     use vars qw/ $apputils $memcache $user $authtoken $authtime /;
 
  # XXX: local opensrf core conf filename should be in config.
  # XXX: STAFF account with ncip service related permissions should be in config.
     osrf_connect("/openils/conf/opensrf_core.xml");
     oils_login( "STAFF_EQUIVALENT_USERNAME", "STAFF_EQUIVALENT_PASSWORD" );
-    my $full_hold =
-'{"__c":"ahr","__p":[null,null,null,null,1,null,null,null,null,"C",null,null,"","3",null,"3",null,"'
-      . $patron
-      . '",1,"3","'
-      . $target . '","'
-      . $patron
-      . '",null,null,null,null,null,null,"f",null]}';
-    my $f_hold_perl = OpenSRF::Utils::JSON->JSON2perl($full_hold);
-    my $resp = simplereq( CIRC(), 'open-ils.circ.holds.create', $authtoken,
-        $f_hold_perl );
+    my $ahr = Fieldmapper::action::hold_request->new();
+    $ahr->hold_type('C');
+    # The targeter doesn't like our special statuses, and changing the status after the targeter finishes is difficult because it runs asynchronously.  Our workaround is to create the hold frozen, unfreeze it, then run the targeter manually.
+    $ahr->target($target);
+    $ahr->usr($patron_id);
+    $ahr->requestor(1);     # XXX CUSTOMIZATION NEEDED XXX admin user (?)
+    $ahr->pickup_lib(2);    # XXX CUSTOMIZATION NEEDED XXX script user OU
+    $ahr->phone_notify('');
+    $ahr->email_notify(1);
+    $ahr->frozen('t');
+    my $resp = simplereq( CIRC(), 'open-ils.circ.holds.create', $authtoken, $ahr );
+    my $e = new_editor( xact => 1, authtoken => $session{authtoken} );
+    $ahr = $e->retrieve_action_hold_request($resp);    # refresh from db
+    $ahr->frozen('f');
+    $e->update_action_hold_request($ahr);
+    $e->commit;
+    $U->storagereq( 'open-ils.storage.action.hold_request.copy_targeter', undef, $ahr->id );
 
     #oils_event_die($resp);
     my $errors = "";

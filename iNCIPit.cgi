@@ -48,10 +48,15 @@ close POST_DATA;
 # XXX: just the most recently posted ncip message filename should be in config.
 {
     local $/ = undef;
-    open FILE, "last_post.txt" or die "Couldn't open file: $!";
-    binmode FILE;
-    $prev_xml = <FILE>;
-    close FILE;
+    if (open FILE, "last_post.txt") {
+        binmode FILE;
+        $prev_xml = <FILE>;
+        close FILE;
+    } else {
+        # poor man's creat.
+        (open(FILE, ">last_post.txt") && close(FILE))
+            or die "Couldn't create file: $!";
+    }
 }
 
 # fail as gracefully as possible if repeat post has occured

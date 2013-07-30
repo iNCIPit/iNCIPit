@@ -162,10 +162,11 @@ sub renew_item {
     my $taidValue  = $doc->find('/NCIPMessage/RenewItem/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
 
     my $pid = $doc->findvalue('/NCIPMessage/RenewItem/UniqueUserId/UserIdentifierValue');
-    my $barcode = $doc->findvalue('/NCIPMessage/RenewItem/UniqueItemId/ItemIdentifierValue');
+    my $unique_item_id = $doc->findvalue('/NCIPMessage/RenewItem/UniqueItemId/ItemIdentifierValue');
     my $due_date = $doc->findvalue('/NCIPMessage/RenewItem/DateDue');
 
-    my $r = renewal( $barcode, $due_date );
+    # we are using the UniqueItemId value as a barcode here
+    my $r = renewal( $unique_item_id, $due_date );
 
     my $hd = <<ITEMRENEWAL;
 Content-type: text/xml
@@ -189,7 +190,7 @@ Content-type: text/xml
             </ToAgencyId>
         </ResponseHeader>
         <UniqueItemId>
-            <ItemIdentifierValue datatype="string">$visid</ItemIdentifierValue>
+            <ItemIdentifierValue datatype="string">$unique_item_id</ItemIdentifierValue>
         </UniqueItemId>
     </RenewItemResponse>
 </NCIPMessage> 
@@ -198,7 +199,7 @@ ITEMRENEWAL
 
     my $more_info = <<MOREINFO;
 
-VISID             = $visid
+UNIQUEID             = $unique_item_id
 Desired Due Date     = $due_date
 
 MOREINFO
@@ -207,8 +208,8 @@ MOREINFO
     staff_log( $taidValue, $faidValue,
             "RenewItem -> Patronid : "
           . $pid
-          . " | Visid : "
-          . $visid
+          . " | Uniqueid: : "
+          . $unique_item_id
           . " | Due Date : "
           . $due_date );
 }

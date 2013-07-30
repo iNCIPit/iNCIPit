@@ -16,6 +16,7 @@
 # along with iNCIPit. If not, see <http://www.gnu.org/licenses/>.
 
 use warnings;
+use strict;
 use XML::LibXML;
 use CGI::XMLPost;
 use HTML::Entities;

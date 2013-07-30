@@ -903,13 +903,15 @@ sub fail {
 
 ITEMREQ
 
-    staff_log( $taidValue, $faidValue,
+    # XXX: we should log FromAgencyId and ToAgencyId values here, but they are not available to the code at this point
+    staff_log( '', '',
         ( ( caller(0) )[3] . " -> " . $error_msg ) );
     die;
 }
 
 sub do_lookup_user_error_stanza {
 
+    # XXX: we should include FromAgencyId and ToAgencyId values, but they are not available to the code at this point
     my $error = shift;
     my $hd    = <<LOOKUPPROB;
 Content-type: text/xml
@@ -921,14 +923,14 @@ Content-type: text/xml
         <ResponseHeader>
             <FromAgencyId>
                 <UniqueAgencyId>
-                    <Scheme>$taidScheme</Scheme>
-                    <Value>$taidValue</Value>
+                    <Scheme></Scheme>
+                    <Value></Value>
                 </UniqueAgencyId>
             </FromAgencyId>
             <ToAgencyId>
                 <UniqueAgencyId>
-                    <Scheme>$faidScheme</Scheme>
-                    <Value>$faidValue</Value>
+                    <Scheme></Scheme>
+                    <Value></Value>
                 </UniqueAgencyId>
             </ToAgencyId>
         </ResponseHeader>
@@ -949,7 +951,8 @@ Content-type: text/xml
 LOOKUPPROB
 
     logit( $hd, ( caller(0) )[3] );
-    staff_log( $taidValue, $faidValue, ( ( caller(0) )[3] . " -> " . $error ) );
+    # XXX: we should log FromAgencyId and ToAgencyId values here, but they are not available to the code at this point
+    staff_log( '', '', ( ( caller(0) )[3] . " -> " . $error ) );
     die;
 }
 

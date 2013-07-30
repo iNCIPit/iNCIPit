@@ -267,7 +267,12 @@ ACCEPTITEM
 }
 
 sub item_received {
+    my $faidSchemeX = $doc->findvalue('/NCIPMessage/ItemReceived/InitiationHeader/FromAgencyId/UniqueAgencyId/Scheme');
+    my $faidScheme = HTML::Entities::encode($faidSchemeX);
     my $faidValue = $doc->find('/NCIPMessage/ItemReceived/InitiationHeader/FromAgencyId/UniqueAgencyId/Value');
+    my $taidSchemeX = $doc->findvalue('/NCIPMessage/ItemReceived/InitiationHeader/ToAgencyId/UniqueAgencyId/Scheme');
+    my $taidScheme = HTML::Entities::encode($taidSchemeX);
+    my $taidValue  = $doc->find('/NCIPMessage/ItemReceived/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
     my $visid = $doc->findvalue('/NCIPMessage/ItemReceived/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
     my $copy = copy_from_barcode($visid);
     fail( $copy->{textcode} . " $visid" ) unless ( blessed $copy);

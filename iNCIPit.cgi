@@ -44,32 +44,6 @@ open POST_DATA, ">>post_data.txt";
 print POST_DATA $xml;
 close POST_DATA;
 
-# read in last xml request
-# XXX: just the most recently posted ncip message filename should be in config.
-{
-    local $/ = undef;
-    if (open FILE, "last_post.txt") {
-        binmode FILE;
-        $prev_xml = <FILE>;
-        close FILE;
-    } else {
-        # poor man's creat.
-        (open(FILE, ">last_post.txt") && close(FILE))
-            or die "Couldn't create file: $!";
-    }
-}
-
-# fail as gracefully as possible if repeat post has occured
-if ( $xml eq $prev_xml ) {
-    fail("DUPLICATE NCIP REQUEST POSTED!");
-}
-
-# save just the last post in order to test diff on the next request
-# XXX: just the most recently posted ncip message filename should be in config.
-open LAST_POST_DATA, ">last_post.txt";
-print LAST_POST_DATA $xml;
-close LAST_POST_DATA;
-
 # initialize the parser
 my $parser = new XML::LibXML;
 my $doc = $parser->load_xml( string => $xml );

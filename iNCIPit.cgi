@@ -34,7 +34,11 @@ use MARC::Field;
 use MARC::File::XML;
 use POSIX qw/strftime/;
 use DateTime;
+use Config::Tiny;
+
 my $U = "OpenILS::Application::AppUtils";
+
+my $conf = load_config( 'iNCIPit.ini' );
 
 my $xmlpost = CGI::XMLPost->new();
 my $xml     = $xmlpost->data();
@@ -75,6 +79,16 @@ if ( defined( $session{authtoken} ) ) {
     logout();
 } else {
     fail("Unable to perform action : Unknown Service Request");
+}
+
+# load and parse config file
+sub load_config {
+    my $file = shift;
+
+    my $Config = Config::Tiny->new;
+    $Config = Config::Tiny->read( $file ) ||
+        die( "Error reading config file ", $file, ": ", Config::Tiny->errstr, "\n" );
+    return $Config;
 }
 
 sub logit {
@@ -972,8 +986,8 @@ sub login {
  # XXX: local opensrf core conf filename should be in config.
  # XXX: STAFF account with ncip service related permissions should be in config.
     my $bootstrap = '/openils/conf/opensrf_core.xml';
-    my $uname     = "STAFF_EQUIVALENT_USERNAME_HERE";
-    my $password  = "STAFF_EQUIVALENT_PASSWORD";
+    my $uname     = $conf->{auth}->{username};
+    my $password  = $conf->{auth}->{password};
 
     # Bootstrap the client
     OpenSRF::System->bootstrap_client( config_file => $bootstrap );
@@ -1454,7 +1468,7 @@ sub place_simple_hold {
  # XXX: local opensrf core conf filename should be in config.
  # XXX: STAFF account with ncip service related permissions should be in config.
     osrf_connect("/openils/conf/opensrf_core.xml");
-    oils_login( "STAFF_EQUIVALENT_USERNAME", "STAFF_EQUIVALENT_PASSWORD" );
+    oils_login( $conf->{auth}->{username}, $conf->{auth}->{password} );
     my $ahr = Fieldmapper::action::hold_request->new();
     $ahr->hold_type('C');
     # The targeter doesn't like our special statuses, and changing the status after the targeter finishes is difficult because it runs asynchronously.  Our workaround is to create the hold frozen, unfreeze it, then run the targeter manually.

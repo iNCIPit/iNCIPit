@@ -44,8 +44,8 @@ my $conf = load_config( 'iNCIPit.ini' );
 unless ($conf->{access}->{permit_plaintext} ~= m/^yes$/i) {
     unless ($ENV{HTTPS} eq 'on') {
         print "Content-type: text/plain\n\n";
-		print "Access denied.\n";
-		exit 0;
+        print "Access denied.\n";
+        exit 0;
     }
 }
 
@@ -57,22 +57,22 @@ my $lb_ip = $conf->{access}->{load_balancer_ip};
 if ($lb_ip) {
     my @allowed_ips = split(/ *, */, $conf->{access}->{allowed_client_ips});
 
-	my $forwarded = $ENV{HTTP_X_FORWARDED_FOR};
-	my $ok = 0;
+    my $forwarded = $ENV{HTTP_X_FORWARDED_FOR};
+    my $ok = 0;
 
-	foreach my $check_ip (@allowed_ips) {
-		$ok = 1 if ($check_ip eq $forwarded);
-	}
+    foreach my $check_ip (@allowed_ips) {
+        $ok = 1 if ($check_ip eq $forwarded);
+    }
 
     # if we have a load balancer IP and are relying on
     # X-Forwarded-For, deny requests other than those
     # from the load balancer
     # TODO: support for chained X-Forwarded-For -- ignore all but last
-	unless ($ok && $ENV{REMOTE_ADDR} eq $lb_ip) {
+    unless ($ok && $ENV{REMOTE_ADDR} eq $lb_ip) {
         print "Content-type: text/plain\n\n";
-		print "Access denied.\n";
-		exit 0;
-	}
+        print "Access denied.\n";
+        exit 0;
+    }
 }
 
 my $xmlpost = CGI::XMLPost->new();

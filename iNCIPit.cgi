@@ -41,7 +41,7 @@ my $U = "OpenILS::Application::AppUtils";
 my $conf = load_config( 'iNCIPit.ini' );
 
 # reject non-https access unless configured otherwise
-unless ($conf->{access}->{permit_plaintext} ~= m/^yes$/i) {
+unless ($conf->{access}->{permit_plaintext} =~ m/^yes$/i) {
     unless ($ENV{HTTPS} eq 'on') {
         print "Content-type: text/plain\n\n";
         print "Access denied.\n";

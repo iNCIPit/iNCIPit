@@ -275,6 +275,7 @@ sub accept_item {
     my $request_id = $doc->findvalue('/NCIPMessage/AcceptItem/UniqueRequestId/RequestIdentifierValue') || "unknown";
     my $patron = $doc->findvalue('/NCIPMessage/AcceptItem/UserOptionalFields/VisibleUserId/VisibleUserIdentifier');
     my $copy = copy_from_barcode($visid);
+    fail( "accept_item: " . $copy->{textcode} . " $visid" ) unless ( blessed $copy);
     my $r2 = update_copy( $copy, $conf->{status}->{hold} ); # put into INN-Reach Hold status
 
 # TODO: this should probably fulfill the original hold, not just change the status.  Eventually we should split the hold type, as holds arriving are not the same as holds needing to be sent

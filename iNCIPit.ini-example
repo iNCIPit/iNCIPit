@@ -6,3 +6,25 @@
 [auth]
 username = EXAMPLE
 password = EXAMPLE
+
+[copy]
+circ_modifier = DCB
+location      = 1
+circ_lib      = 2
+
+[hold]
+requestor       = 1
+init_pickup_lib = 2
+
+[path]
+oils_header  = /openils/bin/support-scripts/oils_header.pl
+opensrf_core = /openils/conf/opensrf_core.xml
+
+[status]
+loan_requested = 110
+hold           = 111
+transit        = 112
+transit_return = 113
+
+[volume]
+owning_lib = 2

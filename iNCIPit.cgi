@@ -275,7 +275,7 @@ sub accept_item {
     my $request_id = $doc->findvalue('/NCIPMessage/AcceptItem/UniqueRequestId/RequestIdentifierValue') || "unknown";
     my $patron = $doc->findvalue('/NCIPMessage/AcceptItem/UserOptionalFields/VisibleUserId/VisibleUserIdentifier');
     my $copy = copy_from_barcode($visid);
-    my $r2 = update_copy( $copy, 111 ); # XXX CUSTOMIZATION NEEDED XXX # put into INN-Reach Hold status
+    my $r2 = update_copy( $copy, $conf->{status}->{hold} ); # put into INN-Reach Hold status
 
 # TODO: this should probably fulfill the original hold, not just change the status.  Eventually we should split the hold type, as holds arriving are not the same as holds needing to be sent
 
@@ -433,7 +433,7 @@ sub item_checked_in {
     my $r = checkin($visid);
     my $copy = copy_from_barcode($visid);
     fail( $copy->{textcode} . " $visid" ) unless ( blessed $copy);
-    my $r2 = update_copy( $copy, 113 ); # XXX CUSTOMIZATION NEEDED XXX # "INN-Reach Transit Return" status
+    my $r2 = update_copy( $copy, $conf->{status}->{transit_return} ); # "INN-Reach Transit Return" status
 
     my $hd = <<ITEMCHECKEDIN;
 Content-type: text/xml
@@ -641,7 +641,7 @@ sub item_shipped {
 
     my $copy = copy_from_barcode($barcode);
     fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-    my $r = update_copy_shipped( $copy, 112, $visid );    # XXX CUSTOMIZATION NEEDED XXX # put copy into INN-Reach Transit status & modify barcode = Visid != tempIIIiNumber
+    my $r = update_copy_shipped( $copy, $conf->{status}->{transit}, $visid ); # put copy into INN-Reach Transit status & modify barcode = Visid != tempIIIiNumber
 
     my $hd = <<ITEMSHIPPED;
 Content-type: text/xml
@@ -699,7 +699,7 @@ sub item_request {
     my $r = "default error checking response";
 
     if ( $barcode =~ /^i/ ) {    # XXX EG is User Agency # create copy only if barcode is an iNUMBER
-        my $copy_status_id = 110;    # XXX CUSTOMIZATION NEEDED XXX # INN-Reach Loan Requested - local configured status
+        my $copy_status_id = $conf->{status}->{loan_requested}; # INN-Reach Loan Requested - local configured status
         $barcode .= $faidValue;
         # we want our custom status to be then end result, so create the copy with status of "Available, then hold it, then update the status
         $r = create_copy( $title, $callnumber, $barcode, 0, $medium_type );
@@ -711,7 +711,7 @@ sub item_request {
         my $copy = copy_from_barcode($barcode);
         my $pid2 = 1013459; # XXX CUSTOMIZATION NEEDED XXX # this is the id of a user representing your DCB system, TODO: use agency information to create and link to individual accounts per agency, if needed
         $r = place_simple_hold( $copy->id, $pid2 );
-        my $r2 = update_copy( $copy, 111 ); # XXX CUSTOMIZATION NEEDED XXX # put into INN-Reach Hold status
+        my $r2 = update_copy( $copy, $conf->{status}->{hold} ); # put into INN-Reach Hold status
     }
 
     my $hd = <<ITEMREQ;
@@ -1292,7 +1292,7 @@ sub create_copy {
     # Create volume record
     my $vol =
       OpenSRF::AppSession->create('open-ils.cat')
-      ->request( 'open-ils.cat.call_number.find_or_create', $session{authtoken}, $callnumber, $bre->id, 2 )   # XXX CUSTOMIZATION NEEDED XXX
+      ->request( 'open-ils.cat.call_number.find_or_create', $session{authtoken}, $callnumber, $bre->id, $conf->{volume}->{owning_lib} )
       ->gather(1);
     return $vol->{textcode} if ( $vol->{textcode} );
 
@@ -1308,17 +1308,17 @@ sub create_copy {
     # Adjust these lines as needed.
     #    $copy->circ_modifier(qq($medium_type)); # XXX CUSTOMIZATION NEEDED XXX
     # OR
-    $copy->circ_modifier('DCB'); # XXX CUSTOMIZATION NEEDED XXX
+    $copy->circ_modifier($conf->{copy}->{circ_modifier});
     $copy->barcode($barcode);
     $copy->call_number( $vol->{acn_id} );
-    $copy->circ_lib(2); # XXX CUSTOMIZATION NEEDED XXX
+    $copy->circ_lib($conf->{copy}->{circ_lib});
     $copy->circulate('t');
     $copy->holdable('t');
     $copy->opac_visible('t');
     $copy->deleted('f');
     $copy->fine_level(2);
     $copy->loan_duration(2);
-    $copy->location(156); # XXX CUSTOMIZATION NEEDED XXX
+    $copy->location($conf->{copy}->{location});
     $copy->status($copy_status_id);
     $copy->editor('1');
     $copy->creator('1');
@@ -1496,23 +1496,22 @@ sub place_simple_hold {
     #my ($type, $target, $patron, $pickup_ou) = @_;
     my ( $target, $patron_id ) = @_;
 
-    # NOTE : switch "t" to an "f" to make inactive hold active
-    require '/openils/bin/oils_header.pl';    # XXX CUSTOMIZATION NEEDED XXX
+    require $conf->{path}->{oils_header};
     use vars qw/ $apputils $memcache $user $authtoken $authtime /;
 
- # XXX: local opensrf core conf filename should be in config.
- # XXX: STAFF account with ncip service related permissions should be in config.
-    osrf_connect("/openils/conf/opensrf_core.xml");
+    osrf_connect( $conf->{path}->{opensrf_core} );
     oils_login( $conf->{auth}->{username}, $conf->{auth}->{password} );
     my $ahr = Fieldmapper::action::hold_request->new();
     $ahr->hold_type('C');
     # The targeter doesn't like our special statuses, and changing the status after the targeter finishes is difficult because it runs asynchronously.  Our workaround is to create the hold frozen, unfreeze it, then run the targeter manually.
     $ahr->target($target);
     $ahr->usr($patron_id);
-    $ahr->requestor(1);     # XXX CUSTOMIZATION NEEDED XXX admin user (?)
-    $ahr->pickup_lib(2);    # XXX CUSTOMIZATION NEEDED XXX script user OU
-    $ahr->phone_notify('');
-    $ahr->email_notify(1);
+    $ahr->requestor($conf->{hold}->{requestor});
+    # NOTE: When User Agency, we don't know the pickup location until ItemShipped time
+    # TODO: When Item Agency and using holds, set this to requested copy's circ lib?
+    $ahr->pickup_lib($conf->{hold}->{init_pickup_lib});
+    $ahr->phone_notify(''); # TODO: set this based on usr prefs
+    $ahr->email_notify(1); # TODO: set this based on usr prefs
     $ahr->frozen('t');
     my $resp = simplereq( CIRC(), 'open-ils.circ.holds.create', $authtoken, $ahr );
     my $e = new_editor( xact => 1, authtoken => $session{authtoken} );

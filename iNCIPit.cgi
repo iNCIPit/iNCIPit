@@ -708,11 +708,13 @@ sub item_request {
         my $r2   = place_simple_hold( $copy->id, $pid );
         my $r3   = update_copy( $copy, $copy_status_id );
     } else {    # XXX EG is Item Agency
-        # place hold for user UniqueUserId/UniqueAgencyId/Value = institution account
-        my $copy = copy_from_barcode($barcode);
-        my $pid2 = 1013459; # XXX CUSTOMIZATION NEEDED XXX # this is the id of a user representing your DCB system, TODO: use agency information to create and link to individual accounts per agency, if needed
-        $r = place_simple_hold( $copy->id, $pid2 );
-        my $r2 = update_copy( $copy, $conf->{status}->{hold} ); # put into INN-Reach Hold status
+        unless ( $conf->{behavior}->{no_item_agency_holds} =~ m/^y/i ) {
+            # place hold for user UniqueUserId/UniqueAgencyId/Value = institution account
+            my $copy = copy_from_barcode($barcode);
+            my $pid2 = 1013459; # XXX CUSTOMIZATION NEEDED XXX # this is the id of a user representing your DCB system, TODO: use agency information to create and link to individual accounts per agency, if needed
+            $r = place_simple_hold( $copy->id, $pid2 );
+            my $r2 = update_copy( $copy, $conf->{status}->{hold} ); # put into INN-Reach Hold status
+        }
     }
 
     my $hd = <<ITEMREQ;

@@ -7,6 +7,9 @@
 username = EXAMPLE
 password = EXAMPLE
 
+[behavior]
+#no_item_agency_holds = no
+
 [copy]
 circ_modifier = DCB
 location      = 1

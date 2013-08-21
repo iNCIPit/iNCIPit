@@ -854,8 +854,7 @@ sub lookupUser {
 
     $propername = $patron->first_given_name . " " . $patron->family_name;
     $good_until = $patron->expire_date || "unknown";
-    my $userou   = $patron->home_ou->name;
-    my $userpriv = $patron->profile->name;
+    $userpriv = $patron->profile->name;
 
     #} else {
     #    do_lookup_user_error_stanza("PATRON_NOT_FOUND : $id");

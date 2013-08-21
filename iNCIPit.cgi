@@ -126,6 +126,31 @@ sub load_config {
     return $Config;
 }
 
+# load and parse userpriv_map file, returning a hashref
+sub load_userpriv_map {
+    my $filename = shift;
+    my $map = {};
+    if (open(my $fh, "<", $filename)) {
+        while (my $entry = <$fh>) {
+            chomp($entry);
+            my ($from, $to) = split(m/:/, $entry);
+            $map->{$from} = $to;
+        }
+        close $fh;
+    }
+    return $map;
+}
+
+sub lookup_userpriv {
+    my $input = shift;
+    my $map = shift;
+    if (defined($map->{$input})) { # if we have a mapping for this profile
+        return $map->{$input}; # return value from mapping hash
+    } else {
+        return $input; # return original value
+    }
+}
+
 sub logit {
     my ( $msg, $func, $more_info ) = @_;
     open RESP_DATA, ">>resp_data.txt";
@@ -855,6 +880,12 @@ sub lookupUser {
     $propername = $patron->first_given_name . " " . $patron->family_name;
     $good_until = $patron->expire_date || "unknown";
     $userpriv = $patron->profile->name;
+
+    my $userpriv_map = load_userpriv_map( $conf->{path}->{userpriv_map} );
+
+    if ($userpriv_map) {
+        $userpriv = lookup_userpriv($userpriv);
+    }
 
     #} else {
     #    do_lookup_user_error_stanza("PATRON_NOT_FOUND : $id");

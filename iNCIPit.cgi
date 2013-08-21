@@ -786,8 +786,8 @@ sub lookupUser {
         die;
     }
 
-    my ( $propername, $email, $good_until, $userprivid, $block_stanza ) =
-      ( "name here", "", "good until", "0", "" );    # defaults
+    my ( $propername, $email, $good_until, $userpriv, $block_stanza ) =
+      ( "name here", "", "good until", "", "" );    # defaults
 
     my $patron = flesh_user($uidValue);
 
@@ -854,7 +854,6 @@ sub lookupUser {
 
     $propername = $patron->first_given_name . " " . $patron->family_name;
     $good_until = $patron->expire_date || "unknown";
-    $userprivid = $patron->profile;
     my $userou   = $patron->home_ou->name;
     my $userpriv = $patron->profile->name;
 
@@ -912,7 +911,7 @@ Content-type: text/xml
                 </UniqueAgencyId>
                 <AgencyUserPrivilegeType>
                     <Scheme datatype="string">http://testing.purposes.only</Scheme>
-                    <Value datatype="string">$userprivid</Value>
+                    <Value datatype="string">$userpriv</Value>
                 </AgencyUserPrivilegeType>
                 <ValidToDate datatype="string">$good_until</ValidToDate>
             </UserPrivilege> $email $block_stanza

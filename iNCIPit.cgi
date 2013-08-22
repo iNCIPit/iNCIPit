@@ -884,7 +884,7 @@ sub lookupUser {
     my $userpriv_map = load_userpriv_map( $conf->{path}->{userpriv_map} );
 
     if ($userpriv_map) {
-        $userpriv = lookup_userpriv($userpriv);
+        $userpriv = lookup_userpriv($userpriv, $userpriv_map);
     }
 
     #} else {

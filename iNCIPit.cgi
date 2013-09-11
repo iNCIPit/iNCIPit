@@ -557,6 +557,7 @@ sub check_out_item {
     my $mdate = $doc->findvalue('/NCIPMessage/CheckOutItem/MandatedAction/DateEventOccurred');
     my $patron_barcode = "zyyyy";    # XXX: CUSTOMIZATION NEEDED XXX institution/eg_as_item_agency user lookup here
 
+    # For CheckOutItem and INN-REACH, this value will correspond with our local barcode
     my $barcode = $doc->findvalue('/NCIPMessage/CheckOutItem/UniqueItemId/ItemIdentifierValue');
 
     # TODO: watch for possible real ids here?
@@ -611,6 +612,7 @@ sub check_in_item {
     my $taidScheme = HTML::Entities::encode($taidSchemeX);
     my $taidValue  = $doc->find('/NCIPMessage/CheckInItem/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
 
+    # For CheckInItem and INN-REACH, this value will correspond with our local barcode
     my $barcode = $doc->findvalue('/NCIPMessage/CheckInItem/UniqueItemId/ItemIdentifierValue');
     my $r = checkin($barcode);
     fail($r) if $r =~ /^COPY_NOT_CHECKED_OUT/;

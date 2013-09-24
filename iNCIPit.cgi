@@ -90,9 +90,6 @@ my $doc = $parser->load_xml( string => $xml );
 
 my %session = login();
 
-# Setup our SIGALRM handler.
-$SIG{'ALRM'} = \&logout;
-
 if ( defined( $session{authtoken} ) ) {
     $doc->exists('/NCIPMessage/LookupUser')           ? lookupUser()       : (
     $doc->exists('/NCIPMessage/ItemRequested')        ? item_request()     : (
@@ -109,8 +106,6 @@ if ( defined( $session{authtoken} ) ) {
     fail("UNKNOWN NCIPMessage")
     )))))))))));
 
-    # Clear any SIGALRM timers.
-    alarm(0);
     logout();
 } else {
     fail("Unable to perform action : Unknown Service Request");

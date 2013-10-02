@@ -51,7 +51,7 @@ if ($conf->{behavior}->{patron_id_as_identifier} =~ m/^yes$/i) {
 
 # reject non-https access unless configured otherwise
 unless ($conf->{access}->{permit_plaintext} =~ m/^yes$/i) {
-    unless ($ENV{HTTPS} eq 'on') {
+    unless (defined($ENV{HTTPS}) && $ENV{HTTPS} eq 'on') {
         print "Content-type: text/plain\n\n";
         print "Access denied.\n";
         exit 0;

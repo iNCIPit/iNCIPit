@@ -559,7 +559,8 @@ sub check_out_item {
     my $taidValue  = $doc->find('/NCIPMessage/CheckOutItem/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
 
     my $mdate = $doc->findvalue('/NCIPMessage/CheckOutItem/MandatedAction/DateEventOccurred');
-    my $patron_barcode = "zyyyy";    # XXX: CUSTOMIZATION NEEDED XXX institution/eg_as_item_agency user lookup here
+    # TODO: look up individual accounts for agencies based on barcode prefix + agency identifier
+    my $patron_barcode = $conf->{checkout}->{institutional_patron}; # patron id if patron_id_as_identifier = yes
 
     # For CheckOutItem and INN-REACH, this value will correspond with our local barcode
     my $barcode = $doc->findvalue('/NCIPMessage/CheckOutItem/UniqueItemId/ItemIdentifierValue');

@@ -18,7 +18,7 @@
 use warnings;
 use strict;
 use XML::LibXML;
-use CGI::XMLPost;
+use CGI;
 use HTML::Entities;
 use CGI::Carp;
 use OpenSRF::System;
@@ -83,8 +83,9 @@ if ($lb_ip) {
     }
 }
 
-my $xmlpost = CGI::XMLPost->new();
-my $xml     = $xmlpost->data();
+my $cgi = CGI->new();
+
+my $xml = $cgi->param('POSTDATA') || $cgi->param('XForms:Model');
 
 # log posted data
 # XXX: posted ncip message log filename should be in config.

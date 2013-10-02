@@ -40,6 +40,15 @@ my $U = "OpenILS::Application::AppUtils";
 
 my $conf = load_config( 'iNCIPit.ini' );
 
+# Set some variables from config (or defaults)
+my $patron_id_type;
+
+if ($conf->{behavior}->{patron_id_as_identifier} =~ m/^yes$/i) {
+    $patron_id_type = "id";
+} else {
+    $patron_id_type = "barcode";
+}
+
 # reject non-https access unless configured otherwise
 unless ($conf->{access}->{permit_plaintext} =~ m/^yes$/i) {
     unless ($ENV{HTTPS} eq 'on') {
@@ -799,7 +808,14 @@ sub lookupUser {
 
     my $taidValue = $doc->find('/NCIPMessage/LookupUser/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
     my $id = $doc->findvalue('/NCIPMessage/LookupUser/VisibleUserId/VisibleUserIdentifier');
-    my $uidValue = user_id_from_barcode($id);
+
+    my $uidValue;
+
+    if ($patron_id_type eq 'barcode') {
+        $uidValue = user_id_from_barcode($id);
+    } else {
+        $uidValue = $id;
+    }
 
     if ( !defined($uidValue)
         || ( ref($uidValue) && reftype($uidValue) eq 'HASH' ) )
@@ -889,7 +905,12 @@ sub lookupUser {
     #    die;
     #}
     my $uniqid = $patron->id;
-    my $visid  = $patron->card->barcode;
+    my $visid;
+    if ($patron_id_type eq 'barcode') {
+        $visid = $patron->card->barcode;
+    } else {
+        $visid = $patron->id;
+    }
     my $hd = <<LOOKUPUSERRESPONSE;
 Content-type: text/xml
 
@@ -1410,7 +1431,12 @@ sub checkout {
     }
 
     # Check for user
-    my $uid = user_id_from_barcode($patron_barcode);
+    my $uid;
+    if ($patron_id_type eq 'barcode') {
+        $uid = user_id_from_barcode($patron_barcode);
+    } else {
+        $uid = $patron_barcode;
+    }
     return 'PATRON_BARCODE_NOT_FOUND : ' . $patron_barcode if ( ref($uid) );
 
     my $response = OpenSRF::AppSession->create('open-ils.circ')->request(

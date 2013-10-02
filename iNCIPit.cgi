@@ -21,7 +21,6 @@ use XML::LibXML;
 use CGI::XMLPost;
 use HTML::Entities;
 use CGI::Carp;
-use XML::XPath;
 use OpenSRF::System;
 use OpenSRF::Utils::SettingsClient;
 use Digest::MD5 qw/md5_hex/;

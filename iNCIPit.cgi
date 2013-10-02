@@ -1379,40 +1379,9 @@ sub create_copy {
     $copy->editor('1');
     $copy->creator('1');
 
-    # Add the configured stat cat entries.
-    #my @stat_cats;
-    #my $nodes = $xpath->find("/copy/stat_cat_entry");
-    #foreach my $node ($nodes->get_nodelist) {
-    #    next unless ($node->isa('XML::XPath::Node::Element'));
-    #    my $stat_cat_id = $node->getAttribute('stat_cat');
-    #    my $value = $node->string_value();
-    #    # Need to search for an existing asset.stat_cat_entry
-    #        my $asce = $e->search_asset_stat_cat_entry({'stat_cat' => $stat_cat_id, 'value' => $value})->[0];
-    #    unless ($asce) {
-    #        # if not, create a new one and use its id.
-    #        $asce = Fieldmapper::asset::stat_cat_entry->new();
-    #        $asce->stat_cat($stat_cat_id);
-    #        $asce->value($value);
-    #        $asce->owner($ou->id);
-    #        $e->xact_begin;
-    #        $asce = $e->create_asset_stat_cat_entry($asce);
-    #        $e->xact_commit;
-    #    }
-    #    push(@stat_cats, $asce);
-    #}
-
     $e->xact_begin;
     $copy = $e->create_asset_copy($copy);
 
-    #if (scalar @stat_cats) {
-    #    foreach my $asce (@stat_cats) {
-    #        my $ascecm = Fieldmapper::asset::stat_cat_entry_copy_map->new();
-    #        $ascecm->stat_cat($asce->stat_cat);
-    #        $ascecm->stat_cat_entry($asce->id);
-    #        $ascecm->owning_copy($copy->id);
-    #        $ascecm = $e->create_asset_stat_cat_entry_copy_map($ascecm);
-    #    }
-    #}
     $e->commit;
     return $e->event->{textcode} unless ($r);
     return 'SUCCESS';

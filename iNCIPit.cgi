@@ -131,7 +131,7 @@ sub load_config {
 }
 
 # load and parse userpriv_map file, returning a hashref
-sub load_userpriv_map {
+sub load_map_file {
     my $filename = shift;
     my $map = {};
     if (open(my $fh, "<", $filename)) {
@@ -152,6 +152,16 @@ sub lookup_userpriv {
         return $map->{$input}; # return value from mapping hash
     } else {
         return $input; # return original value
+    }
+}
+
+sub lookup_pickup_lib {
+    my $input = shift;
+    my $map = shift;
+    if (defined($map->{$input})) { # if we found this pickup lib
+        return $map->{$input}; # return value from mapping hash
+    } else {
+        return undef; # the original value does us no good -- return undef
     }
 }
 
@@ -667,12 +677,29 @@ sub item_shipped {
     my $taidScheme = HTML::Entities::encode($taidSchemeX);
     my $taidValue  = $doc->find('/NCIPMessage/ItemShipped/InitiationHeader/ToAgencyId/UniqueAgencyId/Value');
 
+    my $address = $doc->findvalue('/NCIPMessage/ItemShipped/ShippingInformation/PhysicalAddress/UnstructuredAddress/UnstructuredAddressData');
+
     my $visid = $doc->findvalue('/NCIPMessage/ItemShipped/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
     my $barcode = $doc->findvalue('/NCIPMessage/ItemShipped/UniqueItemId/ItemIdentifierValue') . $faidValue;
     my $title = $doc->findvalue('/NCIPMessage/ItemShipped/ItemOptionalFields/BibliographicDescription/Title');
     my $callnumber = $doc->findvalue('/NCIPMessage/ItemShipped/ItemOptionalFields/ItemDescription/CallNumber');
 
     my $copy = copy_from_barcode($barcode);
+
+    my $pickup_lib;
+
+    if ($address) {
+        my $pickup_lib_map = load_map_file( $conf->{path}->{pickup_lib_map} );
+
+        if ($pickup_lib_map) {
+            $pickup_lib = lookup_pickup_lib($address, $pickup_lib_map);
+        }
+    }
+
+    if ($pickup_lib) {
+        update_hold_pickup($barcode, $pickup_lib);
+    }
+
     fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
     my $r = update_copy_shipped( $copy, $conf->{status}->{transit}, $visid ); # put copy into INN-Reach Transit status & modify barcode = Visid != tempIIIiNumber
 
@@ -900,7 +927,7 @@ sub lookupUser {
     $good_until = $patron->expire_date || "unknown";
     $userpriv = $patron->profile->name;
 
-    my $userpriv_map = load_userpriv_map( $conf->{path}->{userpriv_map} );
+    my $userpriv_map = load_map_file( $conf->{path}->{userpriv_map} );
 
     if ($userpriv_map) {
         $userpriv = lookup_userpriv($userpriv, $userpriv_map);
@@ -1272,6 +1299,27 @@ sub locid_from_barcode {
     return $response->{ids}[0];
 }
 
+sub bre_id_from_barcode {
+    check_session_time();
+    my ($barcode) = @_;
+    my $response =
+      OpenSRF::AppSession->create('open-ils.search')
+      ->request( 'open-ils.search.bib_id.by_barcode', $barcode )
+      ->gather(1);
+    return $response;
+}
+
+sub holds_for_bre {
+    check_session_time();
+    my ($bre_id) = @_;
+    my $response =
+      OpenSRF::AppSession->create('open-ils.circ')
+      ->request( 'open-ils.circ.holds.retrieve_all_from_title', $session{authtoken}, $bre_id )
+      ->gather(1);
+    return $response;
+
+}
+
 # Convert a MARC::Record to XML for Evergreen
 #
 # Copied from Dyrcona's issa framework which copied
@@ -1559,6 +1607,38 @@ sub place_simple_hold {
     } elsif ( ref($resp) ne 'HASH' ) {
         return "Hold placed! hold_id = " . $resp . "\n";
     }
+}
+
+sub update_hold_pickup {
+    check_session_time();
+
+    my ( $copy_barcode, $pickup_lib ) = @_;
+
+    # start with barcode of item, find bib ID
+    my $rec = bre_id_from_barcode($copy_barcode);
+
+    # call for holds on that bib
+    my $holds = holds_for_bre($rec);
+
+    # There should only be a single copy hold
+    my $hold_id = @{$holds->{copy_holds}}[0];
+
+    # update the copy hold with the new pickup lib information
+    my $hold_details =
+      OpenSRF::AppSession->create('open-ils.circ')
+      ->request( 'open-ils.circ.hold.details.retrieve', $session{authtoken}, $hold_id )
+      ->gather(1);
+
+    my $hold = $hold_details->{hold};
+
+    $hold->pickup_lib($pickup_lib);
+
+    my $result =
+      OpenSRF::AppSession->create('open-ils.circ')
+      ->request( 'open-ils.circ.hold.update', $session{authtoken}, $hold )
+      ->gather(1);
+
+    return $result;
 }
 
 # Flesh user information

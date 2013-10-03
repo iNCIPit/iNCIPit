@@ -686,7 +686,7 @@ sub item_shipped {
 
     my $copy = copy_from_barcode($barcode);
 
-    fail( "item_shipped: " . $copy->{textcode} . " $visid" ) unless ( blessed $copy);
+    fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
 
     my $pickup_lib;
 
@@ -702,7 +702,6 @@ sub item_shipped {
         update_hold_pickup($barcode, $pickup_lib);
     }
 
-    fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
     my $r = update_copy_shipped( $copy, $conf->{status}->{transit}, $visid ); # put copy into INN-Reach Transit status & modify barcode = Visid != tempIIIiNumber
 
     my $hd = <<ITEMSHIPPED;

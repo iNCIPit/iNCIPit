@@ -686,6 +686,8 @@ sub item_shipped {
 
     my $copy = copy_from_barcode($barcode);
 
+    fail( "item_shipped: " . $copy->{textcode} . " $visid" ) unless ( blessed $copy);
+
     my $pickup_lib;
 
     if ($address) {

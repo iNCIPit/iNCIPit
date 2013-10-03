@@ -1618,11 +1618,15 @@ sub update_hold_pickup {
     # start with barcode of item, find bib ID
     my $rec = bre_id_from_barcode($copy_barcode);
 
+    return undef unless $rec;
+
     # call for holds on that bib
     my $holds = holds_for_bre($rec);
 
     # There should only be a single copy hold
     my $hold_id = @{$holds->{copy_holds}}[0];
+
+    return undef unless $hold_id;
 
     # update the copy hold with the new pickup lib information
     my $hold_details =
@@ -1631,6 +1635,8 @@ sub update_hold_pickup {
       ->gather(1);
 
     my $hold = $hold_details->{hold};
+
+    return undef unless blessed($hold);
 
     $hold->pickup_lib($pickup_lib);
 

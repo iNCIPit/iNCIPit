@@ -1610,10 +1610,10 @@ sub place_simple_hold {
     }
 }
 
-sub update_hold_pickup {
+sub find_hold_on_copy {
     check_session_time();
 
-    my ( $copy_barcode, $pickup_lib ) = @_;
+    my ( $copy_barcode ) = @_;
 
     # start with barcode of item, find bib ID
     my $rec = bre_id_from_barcode($copy_barcode);
@@ -1628,7 +1628,6 @@ sub update_hold_pickup {
 
     return undef unless $hold_id;
 
-    # update the copy hold with the new pickup lib information
     my $hold_details =
       OpenSRF::AppSession->create('open-ils.circ')
       ->request( 'open-ils.circ.hold.details.retrieve', $session{authtoken}, $hold_id )
@@ -1638,8 +1637,19 @@ sub update_hold_pickup {
 
     return undef unless blessed($hold);
 
+    return $hold;
+}
+
+sub update_hold_pickup {
+    check_session_time();
+
+    my ( $copy_barcode, $pickup_lib ) = @_;
+
+    my $hold = find_hold_on_copy($copy_barcode);
+
     $hold->pickup_lib($pickup_lib);
 
+    # update the copy hold with the new pickup lib information
     my $result =
       OpenSRF::AppSession->create('open-ils.circ')
       ->request( 'open-ils.circ.hold.update', $session{authtoken}, $hold )

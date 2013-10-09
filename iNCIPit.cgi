@@ -316,8 +316,11 @@ sub accept_item {
     my $copy = copy_from_barcode($visid);
     fail( "accept_item: " . $copy->{textcode} . " $visid" ) unless ( blessed $copy);
     my $r2 = update_copy( $copy, $conf->{status}->{hold} ); # put into INN-Reach Hold status
-
-# TODO: this should probably fulfill the original hold, not just change the status.  Eventually we should split the hold type, as holds arriving are not the same as holds needing to be sent
+    # We need to find the hold to know the pickup location
+    my $hold = find_hold_on_copy($visid);
+    # Check the copy in to capture for hold -- do it at the pickup_lib
+    # so that the hold becomes Available
+    my $checkin_result = checkin_accept($copy->id, $hold->pickup_lib);
 
     my $hd = <<ACCEPTITEM;
 Content-type: text/xml
@@ -1526,6 +1529,24 @@ sub checkin {
       ->request( 'open-ils.circ.checkin.override',
         $session{authtoken}, { force => 1, copy_id => $copy->id } )->gather(1);
     return 'SUCCESS' if ( $r->{textcode} eq 'ROUTE_ITEM' );
+    return $r->{textcode};
+}
+
+# Check in an copy as part of accept_item
+# Intent is for the copy to be captured for
+# a hold -- the only hold that should be
+# present on the copy
+
+sub checkin_accept {
+    check_session_time();
+    my $copy_id = shift;
+    my $circ_lib = shift;
+
+    my $r = OpenSRF::AppSession->create('open-ils.circ')->request(
+        'open-ils.circ.checkin.override',
+        $session{authtoken}, { force => 1, copy_id => $copy_id, circ_lib => $circ_lib }
+    )->gather(1);
+
     return $r->{textcode};
 }
 

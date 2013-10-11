@@ -318,9 +318,13 @@ sub accept_item {
     my $r2 = update_copy( $copy, $conf->{status}->{hold} ); # put into INN-Reach Hold status
     # We need to find the hold to know the pickup location
     my $hold = find_hold_on_copy($visid);
-    # Check the copy in to capture for hold -- do it at the pickup_lib
-    # so that the hold becomes Available
-    my $checkin_result = checkin_accept($copy->id, $hold->pickup_lib);
+    if (defined $hold && blessed($hold)) {
+        # Check the copy in to capture for hold -- do it at the pickup_lib
+        # so that the hold becomes Available
+        my $checkin_result = checkin_accept($copy->id, $hold->pickup_lib);
+    } else {
+        fail( "accept_item: no hold found for visid " . $visid );
+    }
 
     my $hd = <<ACCEPTITEM;
 Content-type: text/xml

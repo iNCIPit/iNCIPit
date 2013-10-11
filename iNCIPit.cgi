@@ -1672,6 +1672,9 @@ sub update_hold_pickup {
 
     my $hold = find_hold_on_copy($copy_barcode);
 
+    # return if hold was not found
+    return undef unless defined($hold) && blessed($hold);
+
     $hold->pickup_lib($pickup_lib);
 
     # update the copy hold with the new pickup lib information

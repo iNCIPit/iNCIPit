@@ -1,5 +1,24 @@
 #! /usr/bin/perl 
 
+#
+# Copyright 2012-2013 Midwest Consortium for Library Services
+# Copyright 2013 Calvin College
+#     contact Dan Wells <dbw2@calvin.edu>
+# Copyright 2013 Traverse Area District Library,
+#     contact Jeff Godin <jgodin@tadl.org>
+#
+#
+# This code incorporates code (with modifications) from issa, "a small
+# command-line client to OpenILS/Evergreen". issa is licensed GPLv2 or (at your
+# option) any later version of the GPL.
+#
+# issa is copyright:
+#
+# Copyright 2011 Jason J.A. Stephenson <jason@sigio.com>
+# Portions Copyright 2012 Merrimack Valley Library Consortium
+# <jstephenson@mvlc.org>
+#
+#
 # This file is part of iNCIPit
 #
 # iNCIPit is free software: you can redistribute it and/or modify it

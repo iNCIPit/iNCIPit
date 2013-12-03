@@ -74,12 +74,17 @@ if (-e $conffile) {
 }
 
 # Set some variables from config (or defaults)
-my $patron_id_type;
 
-if ($conf->{behavior}->{patron_id_as_identifier} =~ m/^yes$/i) {
-    $patron_id_type = "id";
-} else {
-    $patron_id_type = "barcode";
+# Default patron_identifier type is barcode
+my $patron_id_type = "barcode";
+
+# if the config specifies a patron_identifier type
+if (my $conf_patron_id_type = $conf->{behavior}->{patron_identifier}) {
+    # and that patron_identifier type is known
+    if ($conf_patron_id_type =~ m/(barcode|id)/) {
+        # override the default with the value from the config
+        $patron_id_type = $conf_patron_id_type;
+    }
 }
 
 # reject non-https access unless configured otherwise

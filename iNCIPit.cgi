@@ -133,7 +133,25 @@ close POST_DATA;
 
 # initialize the parser
 my $parser = new XML::LibXML;
-my $doc = $parser->load_xml( string => $xml );
+my $doc;
+
+# Attempt to parse XML without any modification
+eval {
+    $doc = $parser->load_xml( string => $xml );
+};
+
+# If unsuccessful, attempt to modify XML and try again
+# This is based on actual invalid XML encountered in the wild
+# in an INN-REACH environment.
+if ($@ && ref($@) == 'XML::LibXML::Error') {
+    warn "Unable to parse XML on first try. Attempting to de-mangle.\n";
+    $xml =~ s/\x04//g; # Remove ^D from xml
+    eval {
+        $doc = $parser->load_xml( string => $xml );
+    };
+}
+
+fail("Unable to parse XML. Giving up.") unless $doc;
 
 my %session = login();
 

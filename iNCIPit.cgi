@@ -1,6 +1,7 @@
 #! /usr/bin/perl 
 
 #
+# Copyleft 2014 Jon Scott <mr.jonathon.scott@gmail.com> 
 # Copyright 2012-2013 Midwest Consortium for Library Services
 # Copyright 2013 Calvin College
 #     contact Dan Wells <dbw2@calvin.edu>

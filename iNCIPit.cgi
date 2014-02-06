@@ -56,7 +56,15 @@ use Config::Tiny;
 
 my $U = "OpenILS::Application::AppUtils";
 
-my $conf = load_config( 'iNCIPit.ini' );
+my $cgi = CGI->new();
+my $xml = $cgi->param('POSTDATA');# || $cgi->param('XForms:Model');
+my $host = $cgi->url(-base=>1);
+
+my $conf = (
+        $host =~ m/host-01/i ? load_config('host-01.ini') : (
+        $host =~ m/host-02/i ? load_config('host-02.ini') : (
+        load_config( 'iNCIPit.ini' )
+        )));
 
 # Set some variables from config (or defaults)
 my $patron_id_type;
@@ -102,9 +110,6 @@ if ($lb_ip) {
     }
 }
 
-my $cgi = CGI->new();
-
-my $xml = $cgi->param('POSTDATA') || $cgi->param('XForms:Model');
 
 # log posted data
 # XXX: posted ncip message log filename should be in config.

@@ -2,6 +2,7 @@
 
 #
 # Copyleft 2014 Jon Scott <mr.jonathon.scott@gmail.com> 
+# Copyleft 2014 Mark Cooper <mark.c.cooper@outlook.com> 
 # Copyright 2012-2013 Midwest Consortium for Library Services
 # Copyright 2013 Calvin College
 #     contact Dan Wells <dbw2@calvin.edu>
@@ -60,12 +61,17 @@ my $U = "OpenILS::Application::AppUtils";
 my $cgi = CGI->new();
 my $xml = $cgi->param('POSTDATA');# || $cgi->param('XForms:Model');
 my $host = $cgi->url(-base=>1);
+my $hostname = (split "/", $host)[2]; # base hostname i.e. www.example.org
+my $conffile = "$hostname.ini"; # hostname specific ini file i.e. www.example.org.ini
+my $conf;
 
-my $conf = (
-        $host =~ m/host-01/i ? load_config('host-01.ini') : (
-        $host =~ m/host-02/i ? load_config('host-02.ini') : (
-        load_config( 'iNCIPit.ini' )
-        )));
+# attempt to load configuration file using matching request hostname, fallback to default
+if (-e $conffile) {
+        $conf = load_config($conffile);
+} else {
+        $conffile = "iNCIPit.ini";
+        $conf = load_config($conffile);
+}
 
 # Set some variables from config (or defaults)
 my $patron_id_type;
@@ -112,10 +118,12 @@ if ($lb_ip) {
 }
 
 
-# log posted data
+# log request hostname, configuration file used and posted data
 # XXX: posted ncip message log filename should be in config.
 open POST_DATA, ">>post_data.txt";
-print POST_DATA $xml;
+print POST_DATA "INCOMING REQUEST\t$hostname\n";
+print POST_DATA "CONFIGURATION FILE\t$conffile\n";
+print POST_DATA "$xml\n";
 close POST_DATA;
 
 # initialize the parser

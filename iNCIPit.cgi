@@ -39,6 +39,7 @@
 use warnings;
 use strict;
 use XML::LibXML;
+use XML::LibXML::ErrNo;
 use CGI;
 use HTML::Entities;
 use CGI::Carp;

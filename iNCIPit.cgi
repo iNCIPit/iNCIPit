@@ -869,10 +869,11 @@ sub item_request {
         }
     }
 
-    # Avoid generating invalid XML responses by encoding title/author
+    # Avoid generating invalid XML responses by encoding title/author/callnumber
     # TODO: Move away from heredocs for generating XML
 	$title  = HTML::Entities::encode($title);
 	$author = HTML::Entities::encode($author);
+	$callnumber = HTML::Entities::encode($callnumber);
 
     my $hd = <<ITEMREQ;
 Content-type: text/xml

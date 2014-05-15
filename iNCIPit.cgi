@@ -39,6 +39,7 @@
 use warnings;
 use strict;
 use XML::LibXML;
+use XML::LibXML::ErrNo;
 use CGI;
 use HTML::Entities;
 use CGI::Carp;
@@ -133,7 +134,53 @@ close POST_DATA;
 
 # initialize the parser
 my $parser = new XML::LibXML;
-my $doc = $parser->load_xml( string => $xml );
+my $doc;
+
+# Attempt to parse XML without any modification
+eval {
+    $doc = $parser->load_xml( string => $xml );
+};
+
+# Attempt to gracefully handle invalid XML, including mitigations for known common issues.
+if ($@ && ref($@) ne 'XML::LibXML::Error') {
+    # We received an error, but it was not a LibXML error object
+    fail("Unknown error parsing XML: $@");
+} elsif ($@) {
+    # We received an error in the form of a LibXML error object
+
+    my $warning = sprintf("Unable to parse XML on the first try. LibXML error code: %s, message: %s", $@->code(), $@->message());
+    warn $warning;
+
+    # If the error was ERR_INVALID_CHAR, attempt to modify XML and try again
+    if ($@->code() == XML::LibXML::ErrNo::ERR_INVALID_CHAR) {
+
+        warn "Attempting to de-mangle by removing known invalid character(s).\n";
+
+        # This is based on actual invalid XML encountered in the wild
+        # in an INN-REACH environment.
+        $xml =~ s/\x04//g; # Remove ^D from xml
+
+        # Attempt to re-parse after de-mangling
+        eval {
+            $doc = $parser->load_xml( string => $xml );
+        };
+
+        if ($@ && ref($@) ne 'XML::LibXML::Error') {
+            # We received an error, but it was not a LibXML error object
+            fail("Unknown error parsing XML on second attempt: $@");
+        } elsif ($@) {
+            # We received an error in the form of a LibXML error object
+            my $error = sprintf("Unable to parse XML even after de-mangling. LibXML error code: %s, message: %s", $@->code(), $@->message());
+            fail($error);
+        }
+        warn "Success parsing XML after de-mangling.\n";
+    } else {
+        # This is not an error that we know how to recover from
+        fail("No known workaround for this error. Giving up.") unless $doc;
+    }
+}
+
+fail("XML parsing did not result in a document.") unless $doc && ref($doc) eq 'XML::LibXML::Document';
 
 my %session = login();
 

@@ -337,7 +337,7 @@ sub renew_item {
 
     my $pid = $doc->findvalue('/NCIPMessage/RenewItem/UniqueUserId/UserIdentifierValue');
     my $unique_item_id = $doc->findvalue('/NCIPMessage/RenewItem/UniqueItemId/ItemIdentifierValue');
-    my $due_date = $doc->findvalue('/NCIPMessage/RenewItem/DateDue');
+    my $due_date = $doc->findvalue('/NCIPMessage/RenewItem/DesiredDateDue');
 
     # we are using the UniqueItemId value as a barcode here
     my $r = renewal( $unique_item_id, $due_date );

@@ -512,11 +512,18 @@ sub item_cancelled {
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
         my $r = delete_copy($copy);
     } else {
-
         # remove hold!
+        my $r = cancel_hold($barcode);
+        # TODO: check for any errors or unexpected return values in $r
         my $copy = copy_from_barcode($barcode);
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-        my $r = update_copy( $copy, 0 ); # TODO: we need to actually remove the hold, not just reset to available
+        $r = update_copy( $copy, 7 ); # set to reshelving (for wiggle room)
+        # TODO: check for any errors or unexpected return values in $r
+# XXX other options here could be:
+# - Set to 'available' (it is probably still on the shelf, though it might be in the process of being retrieved)
+# - Use checkin() here instead - This could trigger things we don't want to happen, though the 'noop' flag should catch at least some of that
+#
+# Also, presumably they cannot cancel once the item is in transit?  If they can, we'll need more logic to decide what to do here.
     }
 
     my $hd = <<ITEMREQUESTCANCELLED;
@@ -1762,6 +1769,29 @@ sub update_hold_pickup {
     return undef unless defined($hold) && blessed($hold);
 
     $hold->pickup_lib($pickup_lib);
+
+    # update the copy hold with the new pickup lib information
+    my $result =
+      OpenSRF::AppSession->create('open-ils.circ')
+      ->request( 'open-ils.circ.hold.update', $session{authtoken}, $hold )
+      ->gather(1);
+
+    return $result;
+}
+
+sub cancel_hold {
+    check_session_time();
+
+    my ( $copy_barcode ) = @_;
+
+    my $hold = find_hold_on_copy($copy_barcode);
+
+    # return if hold was not found
+    return undef unless defined($hold) && blessed($hold);
+
+    $hold->cancel_time('now()');
+    $hold->cancel_cause(5); # 5 = 'Staff forced' (perhaps it should be 'Patron via SIP'?) or OPAC? or add NCIP to the cause table?
+    $hold->cancel_note('NCIP cancellation request');
 
     # update the copy hold with the new pickup lib information
     my $result =

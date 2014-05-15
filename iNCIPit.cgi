@@ -728,7 +728,7 @@ sub check_in_item {
 
     # For CheckInItem and INN-REACH, this value will correspond with our local barcode
     my $barcode = $doc->findvalue('/NCIPMessage/CheckInItem/UniqueItemId/ItemIdentifierValue');
-    my $r = checkin($barcode);
+    my $r = checkin($barcode, 1);
     fail($r) if $r =~ /^COPY_NOT_CHECKED_OUT/;
     # TODO: do we need to do these next steps?  checkin() should handle everything, and we want this to end up in 'reshelving'.  If we are worried about transits, we should handle (abort) them, not just change the status
     ##my $copy = copy_from_barcode($barcode);
@@ -1608,7 +1608,8 @@ sub renewal {
 
 sub checkin {
     check_session_time();
-    my ($barcode) = @_;
+    my ($barcode, $noop) = @_;
+    $noop ||= 0;
 
     my $copy = copy_from_barcode($barcode);
     return $copy->{textcode} unless ( blessed $copy);
@@ -1624,7 +1625,7 @@ sub checkin {
     my $r =
       OpenSRF::AppSession->create('open-ils.circ')
       ->request( 'open-ils.circ.checkin.override',
-        $session{authtoken}, { force => 1, copy_id => $copy->id } )->gather(1);
+        $session{authtoken}, { force => 1, copy_id => $copy->id, noop => $noop } )->gather(1);
     return 'SUCCESS' if ( $r->{textcode} eq 'ROUTE_ITEM' );
     return $r->{textcode};
 }

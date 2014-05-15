@@ -802,6 +802,9 @@ sub item_shipped {
     }
 
     my $r = update_copy_shipped( $copy, $conf->{status}->{transit}, $visid ); # put copy into INN-Reach Transit status & modify barcode = Visid != tempIIIiNumber
+    if ($r ne 'SUCCESS') {
+        fail( $r->{textcode} . ", Barcode: $barcode, Visible ID: $visid" )
+    }
 
     my $hd = <<ITEMSHIPPED;
 Content-type: text/xml
@@ -1309,7 +1312,7 @@ sub update_copy_shipped {
     check_session_time();
     my ( $copy, $status_id, $barcode ) = @_;
     my $e = new_editor( authtoken => $session{authtoken} );
-    return $e->event->{textcode} unless ( $e->checkauth );
+    return $e->event unless ( $e->checkauth );
     $e->xact_begin;
     $copy->status($status_id);
     $copy->barcode($barcode);
@@ -1714,6 +1717,10 @@ sub place_simple_hold {
     my $resp = simplereq( CIRC(), 'open-ils.circ.holds.create', $authtoken, $ahr );
     my $e = new_editor( xact => 1, authtoken => $session{authtoken} );
     $ahr = $e->retrieve_action_hold_request($resp);    # refresh from db
+    if (!ref $ahr) {
+        $e->rollback;
+        fail("place_simple_hold: hold request not placed!");
+    }
     $ahr->frozen('f');
     $e->update_action_hold_request($ahr);
     $e->commit;

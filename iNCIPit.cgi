@@ -869,10 +869,11 @@ sub item_request {
         }
     }
 
-    # Avoid generating invalid XML responses by encoding title/author
+    # Avoid generating invalid XML responses by encoding title/author/callnumber
     # TODO: Move away from heredocs for generating XML
-	$title  = HTML::Entities::encode($title);
-	$author = HTML::Entities::encode($author);
+	$title      = _naive_encode_xml($title);
+	$author     = _naive_encode_xml($author);
+	$callnumber = _naive_encode_xml($callnumber);
 
     my $hd = <<ITEMREQ;
 Content-type: text/xml
@@ -1788,4 +1789,14 @@ sub flesh_user {
         [ 'card', 'cards', 'standing_penalties', 'home_ou', 'profile' ] )
       ->gather(1);
     return $response;
+}
+
+sub _naive_encode_xml {
+    my $val = shift;
+
+    $val =~ s/&/&amp;/g;
+    $val =~ s/</&lt;/g;
+    $val =~ s/>/&gt;/g;
+
+    return $val;
 }

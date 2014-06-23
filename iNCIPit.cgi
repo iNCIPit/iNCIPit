@@ -842,7 +842,12 @@ sub item_request {
 
     # TODO: should we use the VisibleID for item agency variation of this method call
 
-    my $pid = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueUserId/UserIdentifierValue');
+    if ($patron_id_type == "barcode") {
+        my $pid = $doc->findvalue('/NCIPMessage/ItemRequested/UserOptionalFields/VisibleUserId/VisibleUserIdentifier');
+        $pid    = user_id_from_barcode($pid);
+    else {
+        my $pid = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueUserId/UserIdentifierValue');
+    }
     my $barcode = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueItemId/ItemIdentifierValue');
     my $author = $doc->findvalue('/NCIPMessage/ItemRequested/ItemOptionalFields/BibliographicDescription/Author');
     my $title = $doc->findvalue('/NCIPMessage/ItemRequested/ItemOptionalFields/BibliographicDescription/Title');

@@ -507,11 +507,13 @@ sub item_cancelled {
     my $barcode = $doc->findvalue('/NCIPMessage/ItemRequestCancelled/UniqueItemId/ItemIdentifierValue');
 
     if ( $barcode =~ /^i/ ) {    # delete copy only if barcode is an iNUMBER
+        # we are the user agency
         $barcode .= $faidValue;
         my $copy = copy_from_barcode($barcode);
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
         my $r = delete_copy($copy);
     } else {
+        # we are the item agency
         # remove hold!
         my $r = cancel_hold($barcode);
         # TODO: check for any errors or unexpected return values in $r
@@ -519,11 +521,12 @@ sub item_cancelled {
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
         $r = update_copy( $copy, 7 ); # set to reshelving (for wiggle room)
         # TODO: check for any errors or unexpected return values in $r
-# XXX other options here could be:
-# - Set to 'available' (it is probably still on the shelf, though it might be in the process of being retrieved)
-# - Use checkin() here instead - This could trigger things we don't want to happen, though the 'noop' flag should catch at least some of that
-#
-# Also, presumably they cannot cancel once the item is in transit?  If they can, we'll need more logic to decide what to do here.
+        #
+        # XXX other options here could be:
+        # - Set to 'available' (it is probably still on the shelf, though it might be in the process of being retrieved)
+        # - Use checkin() here instead - This could trigger things we don't want to happen, though the 'noop' flag should catch at least some of that
+        #
+        # Also, presumably they cannot cancel once the item is in transit?  If they can, we'll need more logic to decide what to do here.
     }
 
     my $hd = <<ITEMREQUESTCANCELLED;
@@ -1801,7 +1804,7 @@ sub cancel_hold {
     $hold->cancel_cause(5); # 5 = 'Staff forced' (perhaps it should be 'Patron via SIP'?) or OPAC? or add NCIP to the cause table?
     $hold->cancel_note('NCIP cancellation request');
 
-    # update the copy hold with the new pickup lib information
+    # update the (now cancelled) copy hold
     my $result =
       OpenSRF::AppSession->create('open-ils.circ')
       ->request( 'open-ils.circ.hold.update', $session{authtoken}, $hold )

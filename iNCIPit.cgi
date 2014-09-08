@@ -337,7 +337,7 @@ sub renew_item {
 
     my $pid = $doc->findvalue('/NCIPMessage/RenewItem/UniqueUserId/UserIdentifierValue');
     my $unique_item_id = $doc->findvalue('/NCIPMessage/RenewItem/UniqueItemId/ItemIdentifierValue');
-    my $due_date = $doc->findvalue('/NCIPMessage/RenewItem/DateDue');
+    my $due_date = $doc->findvalue('/NCIPMessage/RenewItem/DesiredDateDue');
 
     # we are using the UniqueItemId value as a barcode here
     my $r = renewal( $unique_item_id, $due_date );
@@ -512,11 +512,18 @@ sub item_cancelled {
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
         my $r = delete_copy($copy);
     } else {
-
         # remove hold!
+        my $r = cancel_hold($barcode);
+        # TODO: check for any errors or unexpected return values in $r
         my $copy = copy_from_barcode($barcode);
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-        my $r = update_copy( $copy, 0 ); # TODO: we need to actually remove the hold, not just reset to available
+        $r = update_copy( $copy, 7 ); # set to reshelving (for wiggle room)
+        # TODO: check for any errors or unexpected return values in $r
+# XXX other options here could be:
+# - Set to 'available' (it is probably still on the shelf, though it might be in the process of being retrieved)
+# - Use checkin() here instead - This could trigger things we don't want to happen, though the 'noop' flag should catch at least some of that
+#
+# Also, presumably they cannot cancel once the item is in transit?  If they can, we'll need more logic to decide what to do here.
     }
 
     my $hd = <<ITEMREQUESTCANCELLED;
@@ -721,7 +728,7 @@ sub check_in_item {
 
     # For CheckInItem and INN-REACH, this value will correspond with our local barcode
     my $barcode = $doc->findvalue('/NCIPMessage/CheckInItem/UniqueItemId/ItemIdentifierValue');
-    my $r = checkin($barcode);
+    my $r = checkin($barcode, 1);
     fail($r) if $r =~ /^COPY_NOT_CHECKED_OUT/;
     # TODO: do we need to do these next steps?  checkin() should handle everything, and we want this to end up in 'reshelving'.  If we are worried about transits, we should handle (abort) them, not just change the status
     ##my $copy = copy_from_barcode($barcode);
@@ -795,6 +802,9 @@ sub item_shipped {
     }
 
     my $r = update_copy_shipped( $copy, $conf->{status}->{transit}, $visid ); # put copy into INN-Reach Transit status & modify barcode = Visid != tempIIIiNumber
+    if ($r ne 'SUCCESS') {
+        fail( $r->{textcode} . ", Barcode: $barcode, Visible ID: $visid" )
+    }
 
     my $hd = <<ITEMSHIPPED;
 Content-type: text/xml
@@ -1302,7 +1312,7 @@ sub update_copy_shipped {
     check_session_time();
     my ( $copy, $status_id, $barcode ) = @_;
     my $e = new_editor( authtoken => $session{authtoken} );
-    return $e->event->{textcode} unless ( $e->checkauth );
+    return $e->event unless ( $e->checkauth );
     $e->xact_begin;
     $copy->status($status_id);
     $copy->barcode($barcode);
@@ -1601,7 +1611,8 @@ sub renewal {
 
 sub checkin {
     check_session_time();
-    my ($barcode) = @_;
+    my ($barcode, $noop) = @_;
+    $noop ||= 0;
 
     my $copy = copy_from_barcode($barcode);
     return $copy->{textcode} unless ( blessed $copy);
@@ -1617,7 +1628,7 @@ sub checkin {
     my $r =
       OpenSRF::AppSession->create('open-ils.circ')
       ->request( 'open-ils.circ.checkin.override',
-        $session{authtoken}, { force => 1, copy_id => $copy->id } )->gather(1);
+        $session{authtoken}, { force => 1, copy_id => $copy->id, noop => $noop } )->gather(1);
     return 'SUCCESS' if ( $r->{textcode} eq 'ROUTE_ITEM' );
     return $r->{textcode};
 }
@@ -1706,6 +1717,10 @@ sub place_simple_hold {
     my $resp = simplereq( CIRC(), 'open-ils.circ.holds.create', $authtoken, $ahr );
     my $e = new_editor( xact => 1, authtoken => $session{authtoken} );
     $ahr = $e->retrieve_action_hold_request($resp);    # refresh from db
+    if (!ref $ahr) {
+        $e->rollback;
+        fail("place_simple_hold: hold request not placed!");
+    }
     $ahr->frozen('f');
     $e->update_action_hold_request($ahr);
     $e->commit;
@@ -1762,6 +1777,29 @@ sub update_hold_pickup {
     return undef unless defined($hold) && blessed($hold);
 
     $hold->pickup_lib($pickup_lib);
+
+    # update the copy hold with the new pickup lib information
+    my $result =
+      OpenSRF::AppSession->create('open-ils.circ')
+      ->request( 'open-ils.circ.hold.update', $session{authtoken}, $hold )
+      ->gather(1);
+
+    return $result;
+}
+
+sub cancel_hold {
+    check_session_time();
+
+    my ( $copy_barcode ) = @_;
+
+    my $hold = find_hold_on_copy($copy_barcode);
+
+    # return if hold was not found
+    return undef unless defined($hold) && blessed($hold);
+
+    $hold->cancel_time('now()');
+    $hold->cancel_cause(5); # 5 = 'Staff forced' (perhaps it should be 'Patron via SIP'?) or OPAC? or add NCIP to the cause table?
+    $hold->cancel_note('NCIP cancellation request');
 
     # update the copy hold with the new pickup lib information
     my $result =

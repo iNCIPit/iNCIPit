@@ -514,19 +514,21 @@ sub item_cancelled {
         my $r = delete_copy($copy);
     } else {
         # we are the item agency
-        # remove hold!
-        my $r = cancel_hold($barcode);
-        # TODO: check for any errors or unexpected return values in $r
-        my $copy = copy_from_barcode($barcode);
-        fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-        $r = update_copy( $copy, 7 ); # set to reshelving (for wiggle room)
-        # TODO: check for any errors or unexpected return values in $r
-        #
-        # XXX other options here could be:
-        # - Set to 'available' (it is probably still on the shelf, though it might be in the process of being retrieved)
-        # - Use checkin() here instead - This could trigger things we don't want to happen, though the 'noop' flag should catch at least some of that
-        #
-        # Also, presumably they cannot cancel once the item is in transit?  If they can, we'll need more logic to decide what to do here.
+        unless ( $conf->{behavior}->{no_item_agency_holds} =~ m/^y/i ) {
+            # remove hold!
+            my $r = cancel_hold($barcode);
+            # TODO: check for any errors or unexpected return values in $r
+            my $copy = copy_from_barcode($barcode);
+            fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
+            $r = update_copy( $copy, 7 ); # set to reshelving (for wiggle room)
+            # TODO: check for any errors or unexpected return values in $r
+            #
+            # XXX other options here could be:
+            # - Set to 'available' (it is probably still on the shelf, though it might be in the process of being retrieved)
+            # - Use checkin() here instead - This could trigger things we don't want to happen, though the 'noop' flag should catch at least some of that
+            #
+            # Also, presumably they cannot cancel once the item is in transit?  If they can, we'll need more logic to decide what to do here.
+        }
     }
 
     my $hd = <<ITEMREQUESTCANCELLED;

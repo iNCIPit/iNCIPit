@@ -988,22 +988,27 @@ sub lookupUser {
 
     elsif ( $#penalties > -1 ) {
 
-#                my $penalty;
-#                   foreach $penalty (@penalties) {
-#                    if (defined($penalty->standing_penalty->block_list)) {
-#                            my @block_list = split(/\|/, $penalty->standing_penalty->block_list);
-#                            foreach my $block (@block_list) {
-#                                foreach my $block_on (@$block_types) {
-#                                    if ($block eq $block_on) {
-#                                        $block_stanza .= "\n".$penalty->standing_penalty->name;
-#                                        $patron_ok = 0;
-#                                    }
-#                                    last unless ($patron_ok);
-#                            }
-#                                last unless ($patron_ok);
-#                          }
-#                     }
-#                }
+        # Block only on standing penalties that have CIRC or HOLD in their block list
+        my $block_types = [qw/CIRC HOLD/];
+
+        my $penalty;
+        foreach $penalty (@penalties) {
+            if (defined($penalty->standing_penalty->block_list)) {
+                my @block_list = split(/\|/, $penalty->standing_penalty->block_list);
+                foreach my $block (@block_list) {
+                    foreach my $block_on (@$block_types) {
+                        if ($block eq $block_on) {
+                            $block_stanza .= "\n".$penalty->standing_penalty->name;
+                            $patron_ok = 0;
+                        }
+                        last unless ($patron_ok);
+                    }
+                    last unless ($patron_ok);
+                }
+            }
+        }
+    }
+    unless ($patron_ok) {
         $block_stanza = qq(
             <BlockOrTrap>
                 <UniqueAgencyId>

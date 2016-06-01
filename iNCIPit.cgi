@@ -511,8 +511,8 @@ sub item_cancelled {
         $barcode .= $faidValue;
         my $copy = copy_from_barcode($barcode);
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-        my $r = delete_copy($copy);
         cancel_hold($barcode);
+        my $r = delete_copy($copy);
     } else {
         # we are the item agency
         unless ( $conf->{behavior}->{no_item_agency_holds} =~ m/^y/i ) {

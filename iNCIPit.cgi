@@ -1537,6 +1537,9 @@ sub create_copy {
     $copy->fine_level(2);
     $copy->loan_duration(2);
     $copy->location($conf->{copy}->{location});
+    if (my $price = $conf->{copy}->{price}) {
+        $copy->price($price);
+    }
     $copy->status($copy_status_id);
     $copy->editor('1');
     $copy->creator('1');

@@ -1422,7 +1422,11 @@ sub bre_id_from_barcode {
       OpenSRF::AppSession->create('open-ils.search')
       ->request( 'open-ils.search.bib_id.by_barcode', $barcode )
       ->gather(1);
-    return $response;
+    if (ref($response) eq 'HASH') {
+        return undef;
+    } else {
+        return $response;
+    }
 }
 
 sub holds_for_bre {

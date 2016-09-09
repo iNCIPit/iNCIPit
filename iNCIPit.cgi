@@ -200,7 +200,7 @@ if ( defined( $session{authtoken} ) ) {
     fail("UNKNOWN NCIPMessage")
     )))))))))));
 
-    logout();
+    #logout();
 } else {
     fail("Unable to perform action : Unknown Service Request");
 }

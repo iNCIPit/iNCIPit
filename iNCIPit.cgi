@@ -1762,7 +1762,8 @@ sub find_hold_on_copy {
 
     # start with barcode of item, find bib ID
     my $rec = bre_id_from_barcode($copy_barcode);
-
+use Data::Dumper;
+warn "Record: " . Dumper($rec);
     return undef unless $rec;
 
     # call for holds on that bib
@@ -1781,7 +1782,7 @@ sub find_hold_on_copy {
     my $hold = $hold_details->{hold};
 
     return undef unless blessed($hold);
-
+warn "Hold: " . Dumper($hold);
     return $hold;
 }
 
@@ -1811,10 +1812,14 @@ sub cancel_hold {
 
     my ( $copy_barcode ) = @_;
 
+    warn "Looking for hold to cancel for copy with barcode $copy_barcode\n";
+
     my $hold = find_hold_on_copy($copy_barcode);
 
     # return if hold was not found
     return undef unless defined($hold) && blessed($hold);
+
+    warn "Found a hold to cancel for copy with barcode $copy_barcode\n";
 
     $hold->cancel_time('now()');
     $hold->cancel_cause(5); # 5 = 'Staff forced' (perhaps it should be 'Patron via SIP'?) or OPAC? or add NCIP to the cause table?

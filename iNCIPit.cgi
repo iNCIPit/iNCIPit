@@ -576,6 +576,7 @@ sub item_checked_in {
 
     my $visid = $doc->findvalue('/NCIPMessage/ItemCheckedIn/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
     my $r = checkin($visid);
+    my $hold_r = cancel_hold($visid);
     my $copy = copy_from_barcode($visid);
     fail( $copy->{textcode} . " $visid" ) unless ( blessed $copy);
     my $r2 = update_copy( $copy, $conf->{status}->{transit_return} ); # "INN-Reach Transit Return" status

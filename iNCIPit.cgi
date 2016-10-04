@@ -70,7 +70,7 @@ my $conf;
 if (-e $conffile) {
         $conf = load_config($conffile);
 } else {
-        $conffile = "iNCIPit.ini";
+        $conffile = "/openils/conf/ncip/ncip.ini";
         $conf = load_config($conffile);
 }
 
@@ -126,7 +126,7 @@ if ($lb_ip) {
 
 # log request hostname, configuration file used and posted data
 # XXX: posted ncip message log filename should be in config.
-open (POST_DATA, ">>post_data.txt") or die "Cannot write post_data.txt";
+open (POST_DATA, ">>/openils/var/log/post_data.txt") or die "Cannot write post_data.txt";
 print POST_DATA "INCOMING REQUEST\t$hostname\n";
 print POST_DATA "CONFIGURATION FILE\t$conffile\n";
 print POST_DATA "$xml\n";
@@ -252,7 +252,7 @@ sub lookup_pickup_lib {
 
 sub logit {
     my ( $msg, $func, $more_info ) = @_;
-    open (RESP_DATA, ">>resp_data.txt") or die "Cannot write resp_data.txt";
+    open (RESP_DATA, ">>/openils/var/log/resp_data.txt") or die "Cannot write resp_data.txt";
     print RESP_DATA $msg;
     print RESP_DATA $more_info unless !$more_info;
     close RESP_DATA;
@@ -262,7 +262,7 @@ sub logit {
 sub staff_log {
     my ( $taiv, $faiv, $more_info ) = @_;
     my $now = localtime();
-    open (STAFF_LOG, ">>staff_data.csv") or die "Cannot write staff_data.csv";
+    open (STAFF_LOG, ">>/openils/var/log/ncip_log.txt") or die "Cannot write staff_data.csv";
     print STAFF_LOG "$now, $faiv, $taiv, $more_info\n";
     close STAFF_LOG;
 }

@@ -1656,8 +1656,8 @@ sub checkin {
     my $copy = copy_from_barcode($barcode);
     return $copy->{textcode} unless ( blessed $copy);
 
-    return ("COPY_NOT_CHECKED_OUT $barcode")
-      unless ( $copy->status == OILS_COPY_STATUS_CHECKED_OUT );
+#    return ("COPY_NOT_CHECKED_OUT $barcode")
+#      unless ( $copy->status == OILS_COPY_STATUS_CHECKED_OUT );
 
     my $e = new_editor( authtoken => $session{authtoken} );
     return $e->event->{textcode} unless ( $e->checkauth );

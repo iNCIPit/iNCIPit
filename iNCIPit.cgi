@@ -1131,13 +1131,13 @@ sub fail {
         <ResponseHeader>
             <FromAgencyId>
                 <UniqueAgencyId>
-                    <Scheme>http://136.181.125.166:6601/IRCIRCD?target=get_scheme_values&amp;scheme=UniqueAgencyId</Scheme>
+                    <Scheme>http://72.52.134.169:6601/IRCIRCD?target=get_scheme_values&amp;scheme=UniqueAgencyId</Scheme>
                     <Value></Value>
                 </UniqueAgencyId>
             </FromAgencyId>
             <ToAgencyId>
                 <UniqueAgencyId>
-                    <Scheme>http://136.181.125.166:6601/IRCIRCD?target=get_scheme_values&amp;scheme=UniqueAgencyId</Scheme>
+                    <Scheme>http://72.52.134.169:6601/IRCIRCD?target=get_scheme_values&amp;scheme=UniqueAgencyId</Scheme>
                     <Value>$error_msg</Value>
                 </UniqueAgencyId>
             </ToAgencyId>

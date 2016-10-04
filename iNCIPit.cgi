@@ -1030,6 +1030,12 @@ sub lookupUser {
         }
     }
 
+    ## GRPL : enforce local hold request limit
+    my $patron_vitals = flesh_vitals($uidValue);
+    if ($patron_vitals->{holds}->{total} >= 15) {
+        $patron_ok = 0;
+    }
+
 
     if (!$patron_ok){
         $block_stanza = qq(
@@ -1879,6 +1885,17 @@ sub flesh_user {
       ->gather(1);
     return $response;
 }
+
+sub flesh_vitals {
+    check_session_time();
+    my ($id) = @_;
+    my $response =
+      OpenSRF::AppSession->create('open-ils.actor')
+      ->request( 'open-ils.actor.user.opac.vital_stats',
+        $session{'authtoken'}, $id)->gather(1);
+    return $response;
+}
+
 
 sub _naive_encode_xml {
     my $val = shift;

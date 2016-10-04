@@ -949,6 +949,10 @@ sub lookupUser {
     my $uidValue;
 
     if ($patron_id_type eq 'barcode') {
+        if ($id !~ /^21307/) {
+	    do_lookup_user_error_stanza("PATRON_NOT_FOUND : $id");
+            die;
+	}
         $uidValue = user_id_from_barcode($id);
     } else {
         $uidValue = $id;

@@ -852,7 +852,8 @@ sub item_request {
 
     # TODO: should we use the VisibleID for item agency variation of this method call
 
-    my $pid = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueUserId/UserIdentifierValue');
+#    my $pid = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueUserId/UserIdentifierValue');
+    my $pid = $doc->findvalue('/NCIPMessage/ItemRequested/UserOptionalFields/VisibleUserId/VisibleUserIdentifier');
     my $barcode = $doc->findvalue('/NCIPMessage/ItemRequested/UniqueItemId/ItemIdentifierValue');
     my $author = $doc->findvalue('/NCIPMessage/ItemRequested/ItemOptionalFields/BibliographicDescription/Author');
     my $title = $doc->findvalue('/NCIPMessage/ItemRequested/ItemOptionalFields/BibliographicDescription/Title');
@@ -866,8 +867,16 @@ sub item_request {
         $barcode .= $faidValue;
         # we want our custom status to be then end result, so create the copy with status of "Available, then hold it, then update the status
         $r = create_copy( $title, $callnumber, $barcode, 0, $medium_type );
+        # prevent uid/barcode mixup  -bo
+        my $uidValue;
+        if (($patron_id_type eq 'barcode') && ($pid =~ /^21307/)) {
+            $uidValue = user_id_from_barcode($pid);
+        } else {
+            $uidValue = $pid;
+        }
+
         my $copy = copy_from_barcode($barcode);
-        my $r2   = place_simple_hold( $copy->id, $pid );
+        my $r2   = place_simple_hold( $copy->id, $uidValue );
         my $r3   = update_copy( $copy, $copy_status_id );
     } else {    # XXX EG is Item Agency
         unless ( $conf->{behavior}->{no_item_agency_holds} =~ m/^y/i ) {

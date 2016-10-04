@@ -1052,6 +1052,7 @@ sub lookupUser {
             </BlockOrTrap>);
     }
 
+
     if ( defined( $patron->email ) && $conf->{behavior}->{omit_patron_email} !~ m/^y/i ) {
         $email = qq(
             <UserAddressInformation>

@@ -873,6 +873,7 @@ sub item_request {
         $barcode .= $faidValue;
         # we want our custom status to be then end result, so create the copy with status of "Available, then hold it, then update the status
         $r = create_copy( $title, $callnumber, $barcode, 0, $medium_type );
+	sleep 2;
         # prevent uid/barcode mixup  -bo
         my $uidValue;
         if (($patron_id_type eq 'barcode') && ($pid =~ /^21307/)) {
@@ -1771,11 +1772,14 @@ sub place_simple_hold {
     $ahr->phone_notify(''); # TODO: set this based on usr prefs
     $ahr->email_notify(1); # TODO: set this based on usr prefs
     $ahr->frozen('t');
+
     my $resp = simplereq( CIRC(), 'open-ils.circ.holds.create', $authtoken, $ahr );
 
     staff_log( '', '', ( (  'holds.create -> ' . $target . 'patron: ' .$patron_id . ' ID: '. $resp  ) ) );
 
     my $e = new_editor( xact => 1, authtoken => $session{authtoken} );
+    ## GRPL - hack to make the hold lookup pool safe(r)
+    sleep 2;
     $ahr = $e->retrieve_action_hold_request($resp);    # refresh from db
     if (!ref $ahr) {
         $e->rollback;

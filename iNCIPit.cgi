@@ -510,20 +510,26 @@ sub item_cancelled {
         $barcode .= $faidValue;
         my $copy = copy_from_barcode($barcode);
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-        my $r = delete_copy($copy);
+	my $r = cancel_hold($barcode);
+        $r = delete_copy($copy);
     } else {
-        # remove hold!
-        my $r = cancel_hold($barcode);
-        # TODO: check for any errors or unexpected return values in $r
+        # Make sure the copy exists!
         my $copy = copy_from_barcode($barcode);
-        fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
-        $r = update_copy( $copy, 7 ); # set to reshelving (for wiggle room)
-        # TODO: check for any errors or unexpected return values in $r
-# XXX other options here could be:
-# - Set to 'available' (it is probably still on the shelf, though it might be in the process of being retrieved)
-# - Use checkin() here instead - This could trigger things we don't want to happen, though the 'noop' flag should catch at least some of that
-#
-# Also, presumably they cannot cancel once the item is in transit?  If they can, we'll need more logic to decide what to do here.
+
+            # If copy does not exist, return failure
+            if (ref($copy) eq "HASH") {
+              if ($copy->{textcode} eq 'ASSET_COPY_NOT_FOUND') {
+                staff_log( $taidValue, $faidValue, "Bad Barcode Requested: ". $barcode );
+                fail("cancel request on non-existent item");
+                exit;
+              }
+            }
+            # remove hold!
+            my $r = cancel_hold($barcode);
+
+            fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
+            $r = update_copy( $copy, 7 ); # set to reshelving (for wiggle room)
+            # TODO: check for any errors or unexpected return values in $r
     }
 
     my $hd = <<ITEMREQUESTCANCELLED;

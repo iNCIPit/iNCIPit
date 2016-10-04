@@ -1351,7 +1351,7 @@ sub update_copy_shipped {
     check_session_time();
     my ( $copy, $status_id, $barcode ) = @_;
     my $e = new_editor( authtoken => $session{authtoken} );
-    return $e->event unless ( $e->checkauth );
+    return $e->event->{textcode} unless ( $e->checkauth );
     $e->xact_begin;
     $copy->status($status_id);
     $copy->barcode($barcode);

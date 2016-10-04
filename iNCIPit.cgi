@@ -1499,7 +1499,7 @@ sub create_copy {
     my $bre =
       OpenSRF::AppSession->create('open-ils.cat')
       ->request( 'open-ils.cat.biblio.record.xml.import',
-        $session{authtoken}, $xml, 'System Local', 1 )->gather(1);
+        $session{authtoken}, $xml, 'MeLCat', 1 )->gather(1);
     return $bre->{textcode} if ( ref($bre) eq 'HASH' );
 
     # Create volume record

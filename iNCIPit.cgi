@@ -506,7 +506,7 @@ sub item_cancelled {
 
     my $barcode = $doc->findvalue('/NCIPMessage/ItemRequestCancelled/UniqueItemId/ItemIdentifierValue');
 
-    if ( $barcode =~ /^i/ ) {    # delete copy only if barcode is an iNUMBER
+    if ( $barcode !~ /^31307/ ) {    # delete copy only if barcode is an iNUMBER
         $barcode .= $faidValue;
         my $copy = copy_from_barcode($barcode);
         fail( $copy->{textcode} . " $barcode" ) unless ( blessed $copy);
@@ -862,7 +862,7 @@ sub item_request {
 
     my $r = "default error checking response";
 
-    if ( $barcode =~ /^i/ ) {    # XXX EG is User Agency # create copy only if barcode is an iNUMBER
+    if ( $barcode !~ /^31307/ ) {    # XXX EG is User Agency # create copy only if barcode is an iNUMBER
         my $copy_status_id = $conf->{status}->{loan_requested}; # INN-Reach Loan Requested - local configured status
         $barcode .= $faidValue;
         # we want our custom status to be then end result, so create the copy with status of "Available, then hold it, then update the status

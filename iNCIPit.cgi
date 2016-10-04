@@ -882,7 +882,17 @@ sub item_request {
         unless ( $conf->{behavior}->{no_item_agency_holds} =~ m/^y/i ) {
             # place hold for user UniqueUserId/UniqueAgencyId/Value = institution account
             my $copy = copy_from_barcode($barcode);
-            my $pid2 = 1013459; # XXX CUSTOMIZATION NEEDED XXX # this is the id of a user representing your DCB system, TODO: use agency information to create and link to individual accounts per agency, if needed
+
+            # If copy does not exist, return failure
+	    if (ref($copy) eq "HASH") {
+              if ($copy->{textcode} eq 'ASSET_COPY_NOT_FOUND') { 
+		staff_log( $taidValue, $faidValue, "Bad Barcode Requested: ". $barcode );
+		fail("hold request not placed!");
+		exit;
+	      }
+	    }
+
+            my $pid2 = 907045; # XXX CUSTOMIZATION NEEDED XXX # this is the id of a user representing your DCB system, TODO: use agency information to create and link to individual accounts per agency, if needed
             $r = place_simple_hold( $copy->id, $pid2 );
             my $r2 = update_copy( $copy, $conf->{status}->{hold} ); # put into INN-Reach Hold status
         }

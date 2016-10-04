@@ -458,7 +458,7 @@ sub item_received {
     my $visid = $doc->findvalue('/NCIPMessage/ItemReceived/ItemOptionalFields/ItemDescription/VisibleItemId/VisibleItemIdentifier') . $faidValue;
     my $copy = copy_from_barcode($visid);
     fail( $copy->{textcode} . " $visid" ) unless ( blessed $copy);
-    my $r1 = checkin($visid) if ( $copy->status == OILS_COPY_STATUS_CHECKED_OUT ); # checkin the item before delete if ItemCheckedIn step was skipped
+    my $r1 = checkin($visid);# if ( $copy->status == OILS_COPY_STATUS_CHECKED_OUT ); # checkin the item before delete if ItemCheckedIn step was skipped
     my $r2 = delete_copy($copy);
 
     my $hd = <<ITEMRECEIVED;

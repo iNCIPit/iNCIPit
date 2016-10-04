@@ -1027,7 +1027,8 @@ sub lookupUser {
             </UserAddressInformation>);
     }
 
-    $propername = $patron->first_given_name . " " . $patron->family_name;
+    #$propername = $patron->first_given_name . " " . $patron->family_name;
+    $propername = $patron->family_name . ", " . $patron->first_given_name . " " .$patron->second_given_name;
     $good_until = $patron->expire_date || "unknown";
     $userpriv = $patron->profile->name;
 

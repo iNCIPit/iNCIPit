@@ -1662,8 +1662,10 @@ sub checkin {
     my $e = new_editor( authtoken => $session{authtoken} );
     return $e->event->{textcode} unless ( $e->checkauth );
 
-    my $circ = $e->search_action_circulation(
-        [ { target_copy => $copy->id, xact_finish => undef } ] )->[0];
+# Is $circ ever used?  Circ searched for, but then...?  -bo 2015-01-07
+#    my $circ = $e->search_action_circulation(
+#        [ { target_copy => $copy->id, xact_finish => undef } ] )->[0];
+
     my $r =
       OpenSRF::AppSession->create('open-ils.circ')
       ->request( 'open-ils.circ.checkin.override',

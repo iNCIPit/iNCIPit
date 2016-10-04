@@ -1772,6 +1772,9 @@ sub place_simple_hold {
     $ahr->email_notify(1); # TODO: set this based on usr prefs
     $ahr->frozen('t');
     my $resp = simplereq( CIRC(), 'open-ils.circ.holds.create', $authtoken, $ahr );
+
+    staff_log( '', '', ( (  'holds.create -> ' . $target . 'patron: ' .$patron_id . ' ID: '. $resp  ) ) );
+
     my $e = new_editor( xact => 1, authtoken => $session{authtoken} );
     $ahr = $e->retrieve_action_hold_request($resp);    # refresh from db
     if (!ref $ahr) {

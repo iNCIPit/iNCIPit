@@ -1042,6 +1042,21 @@ sub lookupUser {
         $userpriv = lookup_userpriv($userpriv, $userpriv_map);
     }
 
+    ##  GRPL : put under 13 check here.  If DOB is < 13, set $userpriv to a block
+    my $dob = $patron->dob;
+    $dob =~ s/(....-..-..)(.*)/$1/;
+    my ($birth_year, $birth_month, $birth_day) = split(/-/,$dob);
+    my ($day, $month, $year) = (localtime)[3..5];
+    $year += 1900;
+
+    my $age = $year - $birth_year;
+    $age-- unless sprintf("%02d%02d", $month, $day)
+               >= sprintf("%02d%02d", $birth_month, $birth_day);
+
+    if ($age < 13) {
+        $userpriv = 'Prevent';
+    }
+
     #} else {
     #    do_lookup_user_error_stanza("PATRON_NOT_FOUND : $id");
     #    die;

@@ -133,7 +133,7 @@ print POST_DATA "$xml\n";
 close POST_DATA;
 
 # initialize the parser
-my $parser = new XML::LibXML;
+my $parser = XML::LibXML->new(load_ext_dtd=>0,no_network=>1);
 my $doc;
 
 # Attempt to parse XML without any modification

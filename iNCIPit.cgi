@@ -958,6 +958,10 @@ sub lookupUser {
     if ($patron_id_type eq 'barcode') {
         $uidValue = user_id_from_barcode($id);
     } else {
+	if ($id =~ m/^0/) {
+	    do_lookup_user_error_stanza("PATRON_NOT_FOUND : $id");
+	    die;
+	}
         $uidValue = $id;
     }
 

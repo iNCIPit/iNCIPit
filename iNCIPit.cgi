@@ -994,8 +994,8 @@ sub lookupUser {
 
     elsif ( $#penalties > -1 ) {
 
-        # Block only on standing penalties that have CIRC or HOLD in their block list
-        my $block_types = [qw/CIRC HOLD/];
+        # Block only on standing penalties that have HOLD in their block list
+        my $block_types = [qw/HOLD/];
 
         my $penalty;
         foreach $penalty (@penalties) {
